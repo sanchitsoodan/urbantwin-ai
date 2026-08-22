@@ -10,6 +10,7 @@ import { LandingModal } from './components/layout/LandingModal';
 import { AISolutionsModal } from './components/dashboard/AISolutionsModal';
 import { CityChatbotModal } from './components/chat/CityChatbotModal';
 import { AuthModal } from './components/auth/AuthModal';
+import { NFCControlModal } from './components/nfc/NFCControlModal';
 
 import { CommandCenterView } from './components/views/CommandCenterView';
 import { WhatIfSimulatorView } from './components/views/WhatIfSimulatorView';
@@ -19,12 +20,16 @@ import { ArchitectureView } from './components/views/ArchitectureView';
 const MainContent: React.FC = () => {
   const { activeTab, selectedCity } = useCity();
   const [isPitchModalOpen, setIsPitchModalOpen] = useState(false);
+  const [isNFCOpen, setIsNFCOpen] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans antialiased selection:bg-blue-600 selection:text-white">
       
-      {/* Clean Top Header with City Switcher, Sign Up, Log In & Database */}
-      <Header onOpenPitchModal={() => setIsPitchModalOpen(true)} />
+      {/* Clean Top Header with City Switcher, NFC Hub, Sign Up, Log In & Database */}
+      <Header 
+        onOpenPitchModal={() => setIsPitchModalOpen(true)} 
+        onOpenNFC={() => setIsNFCOpen(true)}
+      />
 
       {/* Mobile-Only Tab Bar */}
       <Navigation />
@@ -39,6 +44,12 @@ const MainContent: React.FC = () => {
         {activeTab === 'emergency-response' && <EmergencySimulatorView />}
         {activeTab === 'architecture' && <ArchitectureView />}
       </main>
+
+      {/* NFC Physical-to-Digital Smart Hub Modal */}
+      <NFCControlModal 
+        isOpen={isNFCOpen}
+        onClose={() => setIsNFCOpen(false)}
+      />
 
       {/* Authentication & User Database Inspector Modal */}
       <AuthModal />
@@ -66,7 +77,7 @@ const MainContent: React.FC = () => {
             <span>— Smart City Operations & Predictive Digital Twin</span>
           </div>
           <div className="flex items-center gap-4 text-[11px]">
-            <span className="text-emerald-700 font-bold">● Database Connected</span>
+            <span className="text-indigo-700 font-bold">● NFC Bridge: Active</span>
             <span className="font-semibold text-slate-700">{selectedCity.name}, {selectedCity.country} {selectedCity.flag}</span>
           </div>
         </div>
