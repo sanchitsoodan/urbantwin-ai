@@ -98,12 +98,61 @@ function createTriageResult(
   ];
   const optMid2: [number, number] = [
     start[0] + dLat * 0.8,
-    start[1] + dLng * 0.8
+    start[1] + dLng * 0.85
   ];
   const optimizedRoute: [number, number][] = [start, optMid1, optMid2, end];
 
   return {
     hospital,
+    distanceKm: distKm,
+    standardETA,
+    optimizedETA,
+    timeSavedMin,
+    standardRoute,
+    optimizedRoute
+  };
+}
+
+// 🚰 UTILITY REPAIR VAN ROUTING: Originates FROM Fixed Depot -> Travels TO Leak Location
+export interface UtilityRepairRouteResult {
+  depotCoords: [number, number];
+  leakCoords: [number, number];
+  distanceKm: number;
+  standardETA: number;
+  optimizedETA: number;
+  timeSavedMin: number;
+  standardRoute: [number, number][];
+  optimizedRoute: [number, number][];
+}
+
+export function calculateUtilityDepotRoute(
+  leakCoords: [number, number],
+  depotCoords: [number, number]
+): UtilityRepairRouteResult {
+  const distKm = calculateDistanceKm(depotCoords, leakCoords);
+  const start = depotCoords;
+  const end = leakCoords;
+
+  const standardETA = Number((distKm * 1.6 + 2.5).toFixed(1));
+  const optimizedETA = Number((distKm * 0.85 + 1.1).toFixed(1));
+  const timeSavedMin = Number((standardETA - optimizedETA).toFixed(1));
+
+  const dLat = end[0] - start[0];
+  const dLng = end[1] - start[1];
+
+  // Standard route (depot -> through city grid -> leak)
+  const std1: [number, number] = [start[0] + dLat * 0.3 + 0.002, start[1] + dLng * 0.2 - 0.002];
+  const std2: [number, number] = [start[0] + dLat * 0.7 - 0.002, start[1] + dLng * 0.6 + 0.002];
+  const standardRoute: [number, number][] = [start, std1, std2, end];
+
+  // AI Priority Route (direct municipal valve corridor)
+  const opt1: [number, number] = [start[0] + dLat * 0.45 + 0.001, start[1] + dLng * 0.4];
+  const opt2: [number, number] = [start[0] + dLat * 0.8, start[1] + dLng * 0.82];
+  const optimizedRoute: [number, number][] = [start, opt1, opt2, end];
+
+  return {
+    depotCoords,
+    leakCoords,
     distanceKm: distKm,
     standardETA,
     optimizedETA,

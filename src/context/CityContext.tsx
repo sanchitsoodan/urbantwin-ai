@@ -18,7 +18,7 @@ import { CITIES_DATABASE, PATIALA_PROFILE } from '../data/citiesData';
 import { INITIAL_AI_INSIGHTS } from '../data/mockCityData';
 import { runCitySimulation } from '../services/simulationEngine';
 import { soundEngine } from '../services/audioService';
-import { findNearestHospitalAndRoute } from '../services/emergencyTriageService';
+import { findNearestHospitalAndRoute, calculateUtilityDepotRoute } from '../services/emergencyTriageService';
 import { detectCurrentLocationWithFallback } from '../services/locationService';
 import { generateCityBypassRoutes } from '../services/bypassRouteService';
 
@@ -316,17 +316,22 @@ export const CityProvider: React.FC<{ children: React.ReactNode }> = ({ children
       optimizedRoute = triage.optimizedRoute;
       description = `Nearest matched emergency facility: ${triage.hospital.name} (${triage.distanceKm} km away, ${triage.hospital.availableBeds} ICU beds available). AI Green-Wave corridor calculated.`;
     } else {
-      // 🚰 UTILITY SHORTAGE & PIPE LEAK
-      targetDestinationName = `${selectedCity.name} Sector Water Substation`;
-      standardETA = 9.4;
-      optimizedETA = 4.8;
-      const targetSubstation: [number, number] = [
-        coords[0] + 0.008,
-        coords[1] - 0.006
-      ];
-      standardRoute = [coords, [coords[0] + 0.004, coords[1] + 0.002], targetSubstation];
-      optimizedRoute = [coords, [coords[0] + 0.006, coords[1] - 0.002], targetSubstation];
-      description = `Water main rupture & localized shortage placed. Priority utility repair van dispatched to valve substation.`;
+      // 🚰 UTILITY PIPE RUPTURE & LEAK: Originates from Fixed Municipal Utility Depot -> Ends at Clicked Leak Coords!
+      const depot = selectedCity.utilityDepot || {
+        id: `DEPOT-${selectedCity.id.toUpperCase()}`,
+        name: `${selectedCity.name} Municipal Water Works Depot`,
+        coordinates: [selectedCity.coordinates[0] - 0.015, selectedCity.coordinates[1] + 0.012] as [number, number],
+        activeCrews: 4,
+        contactChannel: 'Ch 4 (Water Works)'
+      };
+      
+      const utilityRoute = calculateUtilityDepotRoute(coords, depot.coordinates);
+      targetDestinationName = `Water Leak Site (${coords[0].toFixed(3)}, ${coords[1].toFixed(3)})`;
+      standardETA = utilityRoute.standardETA;
+      optimizedETA = utilityRoute.optimizedETA;
+      standardRoute = utilityRoute.standardRoute;
+      optimizedRoute = utilityRoute.optimizedRoute;
+      description = `Water main rupture placed at (${coords[0].toFixed(4)}, ${coords[1].toFixed(4)}). Utility repair van dispatched from ${depot.name} (${utilityRoute.distanceKm} km away) to seal valve.`;
     }
 
     const newIncident: IncidentData = {
@@ -531,13 +536,13 @@ export const CityProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCurrentAmbulanceCoords(currentPos);
 
       if (t < 0.25) {
-        setDispatchStageText(isUtility ? '🔧 Dispatched Repair Van • Route Priority Active' : `🚨 Dispatched to ${targetIncident.targetDestinationName}`);
+        setDispatchStageText(isUtility ? `🔧 Repair Van Deployed from ${selectedCity.utilityDepot?.name.split(' ')[0] || 'Municipal'} Utility Depot` : `🚨 Dispatched to ${targetIncident.targetDestinationName}`);
       } else if (t < 0.65) {
-        setDispatchStageText(isUtility ? '🟡 Traversing Sector Feeder Route' : `🟢 Green-Wave Corridor Active • Signals Cleared`);
+        setDispatchStageText(isUtility ? '🟡 Traversing City Road Network to Leak Site' : `🟢 Green-Wave Corridor Active • Signals Cleared`);
       } else if (t < 0.95) {
-        setDispatchStageText(isUtility ? `🔧 Approaching ${targetIncident.targetDestinationName}` : `🏥 Approaching ${targetIncident.targetDestinationName}`);
+        setDispatchStageText(isUtility ? `🔧 Approaching Ruptured Pipe Junction` : `🏥 Approaching ${targetIncident.targetDestinationName}`);
       } else {
-        setDispatchStageText(isUtility ? `✅ Arrived at ${targetIncident.targetDestinationName}! Repairs Started` : `✅ Arrived at ${targetIncident.targetDestinationName}! ${targetIncident.optimizedETA} min ETA`);
+        setDispatchStageText(isUtility ? `✅ Arrived at Leak Site! High-Pressure Valve Sealed & Repaired` : `✅ Arrived at ${targetIncident.targetDestinationName}! ${targetIncident.optimizedETA} min ETA`);
       }
 
       if (t < 1) {

@@ -65,6 +65,19 @@ const createHospitalBadgeIcon = (name: string, beds: number) => {
   `, [200, 34], [16, 17]);
 };
 
+const createUtilityDepotIcon = (name: string, activeCrews: number) => {
+  return createCustomIcon(`
+    <div style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+      <div style="width:32px;height:32px;border-radius:50%;background:#0284c7;color:white;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(2,132,199,0.4);border:2px solid white;font-size:15px;">
+        🏢
+      </div>
+      <div style="background:#ffffff;border:2px solid #0284c7;color:#0369a1;font-weight:800;font-size:11px;padding:3px 8px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.15);white-space:nowrap;">
+        ${name.split(' ')[0]} Water Works (${activeCrews} Vans)
+      </div>
+    </div>
+  `, [220, 34], [16, 17]);
+};
+
 const createDetourTagIcon = (label: string) => {
   return createCustomIcon(`
     <div style="background:#059669;color:#ffffff;font-weight:800;font-size:11px;padding:4px 10px;border-radius:14px;box-shadow:0 4px 12px rgba(5,150,105,0.4);border:2px solid white;display:flex;align-items:center;gap:4px;white-space:nowrap;">
@@ -417,6 +430,14 @@ export const CityMap: React.FC<CityMapProps> = ({ customHeight, hideSidebar }) =
             }}
           />
         ))}
+
+        {/* Municipal Water Works & Utility Depot Marker */}
+        {selectedCity.utilityDepot && (
+          <Marker
+            position={selectedCity.utilityDepot.coordinates}
+            icon={createUtilityDepotIcon(selectedCity.utilityDepot.name, selectedCity.utilityDepot.activeCrews)}
+          />
+        )}
 
         {/* DUAL EMERGENCY ROUTE VISUALIZATION (ONLY DURING DISPATCH) */}
         {!activeScenarioDetour && !isAIBypassLayerActive && optimizedRouteVisible && activeIncidentsList[0] && (

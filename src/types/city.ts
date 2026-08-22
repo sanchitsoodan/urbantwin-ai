@@ -206,6 +206,14 @@ export interface SimulationResults {
   tailoredSolutions: AIActionItem[];
 }
 
+export interface UtilityDepot {
+  id: string;
+  name: string;
+  coordinates: [number, number];
+  activeCrews: number;
+  contactChannel: string;
+}
+
 export interface CityProfile {
   id: string;
   name: string;
@@ -228,6 +236,7 @@ export interface CityProfile {
 
   incidents: IncidentData[];
   hospitals: HospitalFacility[];
+  utilityDepot?: UtilityDepot;
   corridors: TrafficCorridor[];
   roadClosureOptions: RoadClosureOption[];
   rainFloodSegments: [number, number][];

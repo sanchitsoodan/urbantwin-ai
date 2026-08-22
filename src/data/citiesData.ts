@@ -56,6 +56,14 @@ export const CITIES_DATABASE: Record<string, CityProfile> = {
       }
     ],
 
+    utilityDepot: {
+      id: 'DEPOT-CHD-01',
+      name: 'Chandigarh Municipal Water Works Central Depot',
+      coordinates: [30.7080, 76.7980],
+      activeCrews: 6,
+      contactChannel: 'Ch 4 (Water Works)'
+    },
+
     incidents: [
       {
         id: 'CHD-1042',
@@ -101,23 +109,22 @@ export const CITIES_DATABASE: Record<string, CityProfile> = {
         coordinates: [30.7230, 76.7685],
         timestamp: '14 min ago',
         affectedRoads: 1,
-        targetDestinationName: 'Sector 34 Water Maintenance Substation',
+        targetDestinationName: 'Sector 34 Water Leak Site',
         standardETA: 8.5,
         optimizedETA: 4.8,
         status: 'active',
-        description: 'Main water feeder cracked. Utility repair van dispatched to Sector 34 Substation.',
-        dispatchButtonText: '▶ Dispatch Water Utility Repair Van',
+        description: 'Main water distribution pipe burst in Sector 34. Rapid repair van deployed from Municipal Water Works Depot to seal the rupture.',
+        dispatchButtonText: '▶ Deploy Repair Van from Depot to Sector 34 Leak',
         vehicleIcon: '🔧',
         standardRoute: [
-          [30.7415, 76.7825],
-          [30.7350, 76.7745],
-          [30.7290, 76.7670],
+          [30.7080, 76.7980],
+          [30.7140, 76.7880],
+          [30.7190, 76.7780],
           [30.7230, 76.7685]
         ],
         optimizedRoute: [
-          [30.7415, 76.7825],
-          [30.7380, 76.7710],
-          [30.7300, 76.7610],
+          [30.7080, 76.7980],
+          [30.7160, 76.7810],
           [30.7230, 76.7685]
         ]
       }
@@ -1067,6 +1074,14 @@ export const PATIALA_PROFILE: CityProfile = {
     }
   ],
 
+  utilityDepot: {
+    id: 'DEPOT-PTA-01',
+    name: 'Patiala Municipal Water Works & Valve Substation',
+    coordinates: [30.3540, 76.3680],
+    activeCrews: 4,
+    contactChannel: 'Ch 3 (Hydraulics)'
+  },
+
   incidents: [
     {
       id: 'PTA-101',
@@ -1109,23 +1124,24 @@ export const PATIALA_PROFILE: CityProfile = {
       coordinates: [30.3365, 76.3840],
       timestamp: '15m ago',
       affectedRoads: 1,
-      targetDestinationName: 'Patiala Municipal Water Substation 2',
+      targetDestinationName: 'Leela Bhawan Water Leak Site',
       standardETA: 11.2,
       optimizedETA: 5.1,
       status: 'active',
-      description: 'Water distribution main pipe rupture causing water shortage across Leela Bhawan & Mall Road.',
+      description: 'Water distribution main pipe rupture at Leela Bhawan. Repair van deployed from Municipal Water Works Depot to seal valve.',
+      dispatchButtonText: '▶ Deploy Repair Van from Depot to Leela Bhawan',
+      vehicleIcon: '🔧',
       standardRoute: [
-        [30.3365, 76.3840],
-        [30.3340, 76.3880],
-        [30.3320, 76.3920]
+        [30.3540, 76.3680],
+        [30.3480, 76.3740],
+        [30.3420, 76.3800],
+        [30.3365, 76.3840]
       ],
       optimizedRoute: [
-        [30.3365, 76.3840],
-        [30.3350, 76.3860],
-        [30.3320, 76.3920]
-      ],
-      dispatchButtonText: '▶ Deploy Rapid Water Valve Repair Crew',
-      vehicleIcon: '🔧'
+        [30.3540, 76.3680],
+        [30.3450, 76.3780],
+        [30.3365, 76.3840]
+      ]
     }
   ],
 
