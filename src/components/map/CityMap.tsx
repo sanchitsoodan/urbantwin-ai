@@ -24,7 +24,9 @@ import {
   RotateCcw, 
   Droplet, 
   Car,
-  MousePointer
+  MousePointer,
+  Navigation,
+  CheckCircle2
 } from 'lucide-react';
 
 const createCustomIcon = (htmlStr: string, size: [number, number], anchor: [number, number]) => {
@@ -70,6 +72,24 @@ const createDetourTagIcon = (label: string) => {
       <span>${label}</span>
     </div>
   `, [220, 30], [110, 15]);
+};
+
+const createAIBypassTagIcon = (name: string, timeSaved: number) => {
+  return createCustomIcon(`
+    <div style="background:#065f46;color:#ffffff;font-weight:800;font-size:11px;padding:4px 10px;border-radius:14px;box-shadow:0 4px 14px rgba(6,95,70,0.5);border:2px solid #34d399;display:flex;align-items:center;gap:5px;white-space:nowrap;">
+      <span>🟢</span>
+      <span>AI Low-Traffic Bypass (-${timeSaved} min)</span>
+    </div>
+  `, [240, 30], [120, 15]);
+};
+
+const createCongestionChokeTagIcon = (name: string) => {
+  return createCustomIcon(`
+    <div style="background:#991b1b;color:#ffffff;font-weight:800;font-size:10px;padding:3px 8px;border-radius:12px;box-shadow:0 4px 12px rgba(153,27,27,0.5);border:2px solid #f87171;display:flex;align-items:center;gap:4px;white-space:nowrap;">
+      <span>⛔</span>
+      <span>Traffic Diverted Away</span>
+    </div>
+  `, [180, 26], [90, 13]);
 };
 
 // Map click listener for custom incident placement
@@ -128,7 +148,11 @@ export const CityMap: React.FC<CityMapProps> = ({ customHeight, hideSidebar }) =
     mapFocusTarget,
     implementedSolutions,
     activeScenarioDetour,
-    mapTileStyle
+    mapTileStyle,
+    bypassRoutes,
+    selectedBypassRoute,
+    isAIBypassLayerActive,
+    toggleAIBypassLayer
   } = useCity();
 
   const [detourBannerDismissed, setDetourBannerDismissed] = useState(false);
@@ -139,18 +163,20 @@ export const CityMap: React.FC<CityMapProps> = ({ customHeight, hideSidebar }) =
     setRouteBannerDismissed(false);
   }, [activeScenarioDetour, optimizedRouteVisible]);
 
-  const isLayerActive = (id: string) => layers.find(l => l.id === id)?.active ?? false;
+  const isLayerActive = (id: string) => layers.find(l => l.id === id)?.active ?? true;
   const currentTileConfig = MAP_TILE_PROVIDERS[mapTileStyle] || MAP_TILE_PROVIDERS['positron'];
 
+  const routesToShow = selectedBypassRoute 
+    ? [selectedBypassRoute]
+    : bypassRoutes;
+
   return (
-    <div className={`relative w-full ${customHeight || 'h-[480px] lg:h-[560px]'} rounded-3xl overflow-hidden border border-slate-200 shadow-sm bg-slate-100 ${
-      placementMode !== 'none' ? 'cursor-crosshair' : ''
-    }`}>
+    <div className={`relative w-full ${customHeight || 'h-[500px] lg:h-[620px]'} rounded-3xl overflow-hidden border-2 border-slate-200 shadow-sm bg-slate-100`}>
       
       {/* Clean Filter Bar */}
       {!hideSidebar && <MapLayerSidebar />}
 
-      {/* Detail Modal (Single clean modal with close X) */}
+      {/* Detail Modal */}
       <IncidentModal />
 
       {/* Always Visible Map Legend */}
@@ -165,7 +191,7 @@ export const CityMap: React.FC<CityMapProps> = ({ customHeight, hideSidebar }) =
         {/* 1. Spawn Accident */}
         <button
           onClick={() => setPlacementMode(placementMode === 'accident' ? 'none' : 'accident')}
-          className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold transition border ${
+          className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold transition border cursor-pointer ${
             placementMode === 'accident'
               ? 'bg-rose-600 text-white border-rose-700 shadow-sm ring-2 ring-rose-300 animate-pulse'
               : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200'
@@ -179,7 +205,7 @@ export const CityMap: React.FC<CityMapProps> = ({ customHeight, hideSidebar }) =
         {/* 2. Spawn Water Shortage */}
         <button
           onClick={() => setPlacementMode(placementMode === 'utility' ? 'none' : 'utility')}
-          className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold transition border ${
+          className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold transition border cursor-pointer ${
             placementMode === 'utility'
               ? 'bg-sky-600 text-white border-sky-700 shadow-sm ring-2 ring-sky-300 animate-pulse'
               : 'bg-sky-50 hover:bg-sky-100 text-sky-700 border-sky-200'
@@ -193,7 +219,7 @@ export const CityMap: React.FC<CityMapProps> = ({ customHeight, hideSidebar }) =
         {/* 3. Clear All Incidents */}
         <button
           onClick={clearAllIncidents}
-          className="flex items-center gap-1 px-2 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 border border-slate-200 text-xs font-bold transition"
+          className="flex items-center gap-1 px-2 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 border border-slate-200 text-xs font-bold transition cursor-pointer"
           title="Clear all incidents (Leave map completely clean)"
         >
           <Trash2 className="w-3.5 h-3.5" />
@@ -204,7 +230,7 @@ export const CityMap: React.FC<CityMapProps> = ({ customHeight, hideSidebar }) =
         {activeIncidentsList.length === 0 && (
           <button
             onClick={resetDefaultIncidents}
-            className="flex items-center gap-1 px-2 py-1 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition"
+            className="flex items-center gap-1 px-2 py-1 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition cursor-pointer"
             title="Restore default city events"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -213,12 +239,27 @@ export const CityMap: React.FC<CityMapProps> = ({ customHeight, hideSidebar }) =
         )}
       </div>
 
+      {/* AI LOW-TRAFFIC BYPASS ACTIVE BANNER */}
+      {isAIBypassLayerActive && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[2000] px-4 py-2 rounded-2xl bg-emerald-900 text-white text-xs font-bold shadow-xl border border-emerald-400/50 flex items-center gap-2.5 animate-in fade-in-50">
+          <Navigation className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>🟢 AI Low-Traffic Alternate Routes Active • Commuter Volume Diverted</span>
+          <button 
+            onClick={() => toggleAIBypassLayer(false)}
+            className="p-1 rounded-lg bg-emerald-800 hover:bg-emerald-700 text-emerald-200 transition cursor-pointer"
+            title="Hide AI Bypass Layer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Active Placement Mode Helper Banner */}
       {placementMode !== 'none' && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[2000] px-4 py-2 rounded-full bg-slate-900 text-white text-xs font-bold shadow-xl border border-white/40 flex items-center gap-2 animate-bounce">
           <MousePointer className="w-4 h-4 text-emerald-400" />
           <span>Click anywhere on the map to place {placementMode === 'accident' ? 'an accident 🚨' : 'a water leak 🚰'}!</span>
-          <button onClick={() => setPlacementMode('none')} className="p-0.5 rounded-full hover:bg-slate-700">
+          <button onClick={() => setPlacementMode('none')} className="p-0.5 rounded-full hover:bg-slate-700 cursor-pointer">
             <X className="w-3.5 h-3.5 text-slate-400" />
           </button>
         </div>
@@ -246,11 +287,11 @@ export const CityMap: React.FC<CityMapProps> = ({ customHeight, hideSidebar }) =
           maxZoom={19}
         />
 
-        {/* Live Animated Moving Vehicle */}
+        {/* Live Animated Emergency Dispatch Vehicle */}
         <AnimatedDispatchAmbulance />
 
-        {/* Traffic Corridors (Precise Road Polylines) */}
-        {isLayerActive('traffic') && selectedCity.corridors.map(corridor => {
+        {/* Traffic Corridors (Normal Baseline) */}
+        {isLayerActive('traffic') && !isAIBypassLayerActive && selectedCity.corridors.map(corridor => {
           const color = 
             corridor.congestionLevel === 'High' && !implementedSolutions ? '#dc2626' :
             corridor.congestionLevel === 'Moderate' ? '#d97706' : '#2563eb';
@@ -271,6 +312,47 @@ export const CityMap: React.FC<CityMapProps> = ({ customHeight, hideSidebar }) =
             />
           );
         })}
+
+        {/* ========================================================================= */}
+        {/* 🛣️ AI PROPOSED LOW-TRAFFIC BYPASS CORRIDORS (DISTINCT MACRO AI SOLUTIONS) */}
+        {/* ========================================================================= */}
+        {isAIBypassLayerActive && routesToShow.map((byp) => (
+          <React.Fragment key={byp.id}>
+            {/* 1. Congested Arterial (Dashed Red Line) */}
+            <Polyline
+              positions={byp.congestedCoordinates}
+              pathOptions={{
+                color: '#dc2626',
+                weight: 7,
+                opacity: 0.9,
+                dashArray: '8, 8'
+              }}
+            />
+            {byp.congestedCoordinates.length > 1 && (
+              <Marker
+                position={byp.congestedCoordinates[Math.floor(byp.congestedCoordinates.length / 2)]}
+                icon={createCongestionChokeTagIcon(byp.congestedRoadName)}
+              />
+            )}
+
+            {/* 2. AI Proposed Low-Traffic Alternate Bypass (Glowing Solid Emerald Line) */}
+            <Polyline
+              positions={byp.proposedBypassCoordinates}
+              pathOptions={{
+                color: '#059669',
+                weight: 8,
+                opacity: 0.95,
+                lineCap: 'round'
+              }}
+            />
+            {byp.proposedBypassCoordinates.length > 1 && (
+              <Marker
+                position={byp.proposedBypassCoordinates[Math.floor(byp.proposedBypassCoordinates.length / 2)]}
+                icon={createAIBypassTagIcon(byp.name, byp.timeSavedMin)}
+              />
+            )}
+          </React.Fragment>
+        ))}
 
         {/* WHAT-IF SCENARIO BLOCKED SEGMENT (RED) */}
         {activeScenarioDetour && activeScenarioDetour.blockedSegments.map((seg, idx) => (
@@ -336,8 +418,8 @@ export const CityMap: React.FC<CityMapProps> = ({ customHeight, hideSidebar }) =
           />
         ))}
 
-        {/* DUAL EMERGENCY ROUTE VISUALIZATION */}
-        {!activeScenarioDetour && optimizedRouteVisible && activeIncidentsList[0] && (
+        {/* DUAL EMERGENCY ROUTE VISUALIZATION (ONLY DURING DISPATCH) */}
+        {!activeScenarioDetour && !isAIBypassLayerActive && optimizedRouteVisible && activeIncidentsList[0] && (
           <>
             <Polyline
               positions={activeIncidentsList[0].standardRoute}

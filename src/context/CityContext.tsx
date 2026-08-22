@@ -11,7 +11,8 @@ import {
   AIRecommendation, 
   SimulationParams, 
   SimulationResults,
-  CityProfile
+  CityProfile,
+  AIBypassRoute
 } from '../types/city';
 import { CITIES_DATABASE, PATIALA_PROFILE } from '../data/citiesData';
 import { INITIAL_AI_INSIGHTS } from '../data/mockCityData';
@@ -19,6 +20,7 @@ import { runCitySimulation } from '../services/simulationEngine';
 import { soundEngine } from '../services/audioService';
 import { findNearestHospitalAndRoute } from '../services/emergencyTriageService';
 import { detectCurrentLocationWithFallback } from '../services/locationService';
+import { generateCityBypassRoutes } from '../services/bypassRouteService';
 
 export const INITIAL_LAYERS: LayerConfig[] = [
   { id: 'traffic', label: 'Traffic Corridors', active: true, color: '#2563eb', count: 3 },
@@ -83,7 +85,7 @@ interface CityContextType {
   optimizedRouteVisible: boolean;
   setOptimizedRouteVisible: (visible: boolean) => void;
   
-  // Live Animated Dispatch
+  // Live Animated Emergency Dispatch
   isDispatching: boolean;
   dispatchProgress: number;
   currentAmbulanceCoords: [number, number] | null;
@@ -91,6 +93,14 @@ interface CityContextType {
   startAnimatedDispatch: (incidentId?: string) => void;
   stopAnimatedDispatch: () => void;
   dispatchStageText: string;
+
+  // AI Solutions & Low-Traffic Proposed Bypass Routes
+  bypassRoutes: AIBypassRoute[];
+  selectedBypassRoute: AIBypassRoute | null;
+  setSelectedBypassRoute: (route: AIBypassRoute | null) => void;
+  isAIBypassLayerActive: boolean;
+  toggleAIBypassLayer: (active?: boolean) => void;
+  focusOnBypassRoute: (routeId: string) => void;
 
   // What-If Scenario Visual Detour
   activeScenarioDetour: ScenarioVisualDetour | null;
@@ -125,7 +135,7 @@ const CityContext = createContext<CityContextType | null>(null);
 export const CityProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activeTab, setActiveTabState] = useState<ViewTab>('command-center');
   
-  // Only the 6 preset global cities are in the browser list
+  // Only 6 preset global cities are in the browser list
   const allCitiesList: CityProfile[] = Object.values(CITIES_DATABASE);
 
   const [selectedCity, setSelectedCity] = useState<CityProfile>(CITIES_DATABASE['chandigarh']);
@@ -152,13 +162,18 @@ export const CityProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isSimulating, setIsSimulating] = useState(false);
   const [optimizedRouteVisible, setOptimizedRouteVisible] = useState(false);
   
-  // Animated Dispatch State
+  // Animated Emergency Dispatch State
   const [isDispatching, setIsDispatching] = useState(false);
   const [dispatchProgress, setDispatchProgress] = useState(0);
   const [currentAmbulanceCoords, setCurrentAmbulanceCoords] = useState<[number, number] | null>(null);
   const [currentVehicleIcon, setCurrentVehicleIcon] = useState('🚑');
   const [dispatchStageText, setDispatchStageText] = useState('Standby');
   const animationFrameRef = useRef<number | null>(null);
+
+  // 🛣️ PROPOSED AI LOW-TRAFFIC BYPASS ROUTES
+  const [bypassRoutes, setBypassRoutes] = useState<AIBypassRoute[]>(() => generateCityBypassRoutes(CITIES_DATABASE['chandigarh']));
+  const [selectedBypassRoute, setSelectedBypassRoute] = useState<AIBypassRoute | null>(null);
+  const [isAIBypassLayerActive, setIsAIBypassLayerActive] = useState(false);
 
   // Scenario Visual Detours
   const [activeScenarioDetour, setActiveScenarioDetour] = useState<ScenarioVisualDetour | null>(null);
@@ -198,6 +213,11 @@ export const CityProvider: React.FC<{ children: React.ReactNode }> = ({ children
       soundEngine.playClick();
       setSelectedCity(target);
       
+      const cityBypass = generateCityBypassRoutes(target);
+      setBypassRoutes(cityBypass);
+      setSelectedBypassRoute(null);
+      setIsAIBypassLayerActive(false);
+
       setCityScore(target.baselineScore);
       setActiveRecommendation(target.recommendation);
       setMapFocusTarget(target.coordinates);
@@ -225,6 +245,11 @@ export const CityProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Switch to Patiala Smart City Digital Twin
     setSelectedCity(PATIALA_PROFILE);
+    const patialaBypass = generateCityBypassRoutes(PATIALA_PROFILE);
+    setBypassRoutes(patialaBypass);
+    setSelectedBypassRoute(null);
+    setIsAIBypassLayerActive(false);
+
     setCityScore(PATIALA_PROFILE.baselineScore);
     setActiveRecommendation(PATIALA_PROFILE.recommendation);
     setMapFocusTarget(PATIALA_PROFILE.coordinates);
@@ -249,6 +274,23 @@ export const CityProvider: React.FC<{ children: React.ReactNode }> = ({ children
       matchedCity: PATIALA_PROFILE
     };
   }, []);
+
+  const toggleAIBypassLayer = useCallback((active?: boolean) => {
+    setIsAIBypassLayerActive(prev => active !== undefined ? active : !prev);
+    soundEngine.playClick();
+  }, []);
+
+  const focusOnBypassRoute = useCallback((routeId: string) => {
+    const matched = bypassRoutes.find(r => r.id === routeId);
+    if (matched) {
+      soundEngine.playClick();
+      setSelectedBypassRoute(matched);
+      setIsAIBypassLayerActive(true);
+      if (matched.proposedBypassCoordinates.length > 0) {
+        setMapFocusTarget(matched.proposedBypassCoordinates[1] || matched.proposedBypassCoordinates[0]);
+      }
+    }
+  }, [bypassRoutes]);
 
   // Custom Incident Placement with DYNAMIC NEAREST HOSPITAL TRIAGE
   const addCustomIncidentAt = useCallback((coords: [number, number], category: 'accident' | 'utility' = 'accident') => {
@@ -401,6 +443,8 @@ export const CityProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setOptimizedRouteVisible(false);
     setImplementedSolutions(false);
     setIsDispatching(false);
+    setIsAIBypassLayerActive(false);
+    setSelectedBypassRoute(null);
     setActiveScenarioDetour(null);
   }, [selectedCity]);
 
@@ -416,7 +460,7 @@ export const CityProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, 400);
   }, [simParams, selectedCity]);
 
-  // LIVE ANIMATED DISPATCH
+  // LIVE ANIMATED EMERGENCY DISPATCH (For Emergency Ambulance / Repair Van only)
   const startAnimatedDispatch = useCallback((incidentId?: string) => {
     soundEngine.playEmergencyPing();
     setIsDispatching(true);
@@ -518,15 +562,24 @@ export const CityProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCurrentAmbulanceCoords(null);
   }, []);
 
+  // 🧠 IMPLEMENT AI SOLUTIONS PLAN (Activates Macro Low-Traffic Bypass Routes on Map)
   const implementSolutionPlan = useCallback(() => {
     soundEngine.playSuccess();
     setImplementedSolutions(true);
-    setOptimizedRouteVisible(true);
+    setIsAIBypassLayerActive(true);
     setIsSolutionModalOpen(false);
+
+    // Pick first bypass route to highlight on map
+    if (bypassRoutes.length > 0) {
+      setSelectedBypassRoute(bypassRoutes[0]);
+      if (bypassRoutes[0].proposedBypassCoordinates.length > 0) {
+        setMapFocusTarget(bypassRoutes[0].proposedBypassCoordinates[1] || bypassRoutes[0].proposedBypassCoordinates[0]);
+      }
+    }
 
     setCityScore({
       overall: Math.min(96, selectedCity.baselineScore.overall + 8),
-      traffic: Math.min(95, selectedCity.baselineScore.traffic + 12),
+      traffic: Math.min(95, selectedCity.baselineScore.traffic + 14),
       emergency: Math.min(98, selectedCity.baselineScore.emergency + 6),
       infrastructure: Math.min(94, selectedCity.baselineScore.infrastructure + 8)
     });
@@ -536,13 +589,13 @@ export const CityProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: `SOL-${Date.now()}`,
         type: 'traffic',
         severity: 'success',
-        title: `AI Action Plan Implemented for ${selectedCity.name}`,
-        description: 'Dynamic signal syncing & resource throttling active on live digital twin.',
+        title: `AI Low-Traffic Alternate Routes Activated for ${selectedCity.name}`,
+        description: 'VMS detours active. Commuter volume shifted onto low-traffic bypass corridors (-16 min avg delay).',
         timestamp: 'Just now'
       },
       ...prev
     ]);
-  }, [selectedCity]);
+  }, [selectedCity, bypassRoutes]);
 
   const dismissIncidentModal = useCallback(() => {
     setActiveIncident(null);
@@ -592,6 +645,12 @@ export const CityProvider: React.FC<{ children: React.ReactNode }> = ({ children
         startAnimatedDispatch,
         stopAnimatedDispatch,
         dispatchStageText,
+        bypassRoutes,
+        selectedBypassRoute,
+        setSelectedBypassRoute,
+        isAIBypassLayerActive,
+        toggleAIBypassLayer,
+        focusOnBypassRoute,
         activeScenarioDetour,
         isScenarioDetourActive: !!activeScenarioDetour,
         isSolutionModalOpen,

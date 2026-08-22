@@ -95,6 +95,26 @@ export interface AIActionItem {
   active: boolean;
 }
 
+export interface AIBypassRoute {
+  id: string;
+  name: string;
+  congestedRoadName: string;
+  congestedCoordinates: [number, number][];
+  congestedSpeedKmh: number;
+  congestedDensityPct: number;
+  congestedTravelTimeMin: number;
+  
+  proposedBypassCoordinates: [number, number][];
+  proposedSpeedKmh: number;
+  proposedDensityPct: number;
+  proposedTravelTimeMin: number;
+  timeSavedMin: number;
+  fuelSavedPct: number;
+  co2SavedKg: number;
+  active: boolean;
+  strategyDescription: string;
+}
+
 export interface AIRecommendation {
   id: string;
   issue: string;
@@ -108,6 +128,7 @@ export interface AIRecommendation {
     resourceSavingsPct?: number;
   };
   actionItems: AIActionItem[];
+  proposedBypassRoutes?: AIBypassRoute[];
 }
 
 export interface RoadClosureOption {
