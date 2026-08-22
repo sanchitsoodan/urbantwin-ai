@@ -17,7 +17,15 @@ import { CITIES_DATABASE } from '../data/citiesData';
 import { INITIAL_AI_INSIGHTS } from '../data/mockCityData';
 import { runCitySimulation } from '../services/simulationEngine';
 import { soundEngine } from '../services/audioService';
-import { findNearestHospitalAndRoute, calculateDistanceKm } from '../services/emergencyTriageService';
+import { findNearestHospitalAndRoute } from '../services/emergencyTriageService';
+import { 
+  calculateHaversineDistance, 
+  getCurrentGPSLocation, 
+  reverseGeocodeLocation, 
+  generateCustomCityProfile, 
+  getSavedCustomCities, 
+  saveCustomCityProfile 
+} from '../services/locationService';
 
 export const INITIAL_LAYERS: LayerConfig[] = [
   { id: 'traffic', label: 'Traffic Corridors', active: true, color: '#2563eb', count: 3 },
@@ -47,6 +55,14 @@ interface CityContextType {
   setActiveTab: (tab: ViewTab) => void;
   selectedCity: CityProfile;
   changeCity: (cityId: string) => void;
+  allCitiesList: CityProfile[];
+  
+  // Location Detection & Custom City Creation
+  isLocationModalOpen: boolean;
+  setIsLocationModalOpen: (open: boolean) => void;
+  detectUserLocation: () => Promise<{ cityName: string; distanceKm: number; matchedCity: CityProfile; isNewCustom: boolean }>;
+  addNewCustomCity: (name: string, country: string, flag: string, coordinates: [number, number], tagline?: string) => CityProfile;
+
   layers: LayerConfig[];
   toggleLayer: (layerId: LayerId) => void;
   setLayerState: (layerId: LayerId, active: boolean) => void;
@@ -116,8 +132,17 @@ const CityContext = createContext<CityContextType | null>(null);
 
 export const CityProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activeTab, setActiveTabState] = useState<ViewTab>('command-center');
+  
+  // Dynamic City Registry (Preset + Custom Saved Cities)
+  const [customCities, setCustomCities] = useState<Record<string, CityProfile>>(() => getSavedCustomCities());
+  const allCitiesMap: Record<string, CityProfile> = { ...CITIES_DATABASE, ...customCities };
+  const allCitiesList: CityProfile[] = Object.values(allCitiesMap);
+
   const [selectedCityId, setSelectedCityId] = useState<string>('chandigarh');
-  const selectedCity: CityProfile = CITIES_DATABASE[selectedCityId] || CITIES_DATABASE['chandigarh'];
+  const selectedCity: CityProfile = allCitiesMap[selectedCityId] || CITIES_DATABASE['chandigarh'];
+
+  // Location Modal State
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
   const [layers, setLayers] = useState<LayerConfig[]>(INITIAL_LAYERS);
   
@@ -181,14 +206,14 @@ export const CityProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const changeCity = useCallback((cityId: string) => {
-    if (CITIES_DATABASE[cityId]) {
+    const target = allCitiesMap[cityId] || CITIES_DATABASE[cityId];
+    if (target) {
       soundEngine.playClick();
       setSelectedCityId(cityId);
-      const newCity = CITIES_DATABASE[cityId];
       
-      setCityScore(newCity.baselineScore);
-      setActiveRecommendation(newCity.recommendation);
-      setMapFocusTarget(newCity.coordinates);
+      setCityScore(target.baselineScore);
+      setActiveRecommendation(target.recommendation);
+      setMapFocusTarget(target.coordinates);
       setActiveIncident(null);
       setActiveHospital(null);
       setActiveCorridor(null);
@@ -202,9 +227,94 @@ export const CityProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       const newParams = DEFAULT_SIM_PARAMS;
       setSimParams(newParams);
-      setSimResults(runCitySimulation(newParams, newCity));
+      setSimResults(runCitySimulation(newParams, target));
     }
-  }, []);
+  }, [allCitiesMap]);
+
+  // 📍 DETECT LIVE GPS USER LOCATION
+  const detectUserLocation = useCallback(async () => {
+    soundEngine.playClick();
+    const gps = await getCurrentGPSLocation();
+    const userLat = gps.lat;
+    const userLng = gps.lng;
+
+    // Check distance to all existing cities
+    let nearestCity: CityProfile = selectedCity;
+    let minDistanceKm = Infinity;
+
+    for (const city of Object.values(allCitiesMap)) {
+      const dist = calculateHaversineDistance(userLat, userLng, city.coordinates[0], city.coordinates[1]);
+      if (dist < minDistanceKm) {
+        minDistanceKm = dist;
+        nearestCity = city;
+      }
+    }
+
+    // If within 150 km of an existing preset digital twin, switch to it!
+    if (minDistanceKm <= 150) {
+      changeCity(nearestCity.id);
+      soundEngine.playSuccess();
+      return {
+        cityName: nearestCity.name,
+        distanceKm: Math.round(minDistanceKm),
+        matchedCity: nearestCity,
+        isNewCustom: false
+      };
+    }
+
+    // Otherwise, reverse geocode and dynamically spawn a new custom Digital Twin!
+    const geo = await reverseGeocodeLocation(userLat, userLng);
+    const newCityId = `custom_${Date.now().toString(36)}`;
+    const newProfile = generateCustomCityProfile(
+      newCityId,
+      geo.cityName,
+      geo.countryName,
+      geo.flag,
+      [userLat, userLng]
+    );
+
+    saveCustomCityProfile(newProfile);
+    setCustomCities(prev => ({ ...prev, [newCityId]: newProfile }));
+    
+    // Switch to new city
+    setSelectedCityId(newCityId);
+    setCityScore(newProfile.baselineScore);
+    setActiveRecommendation(newProfile.recommendation);
+    setMapFocusTarget(newProfile.coordinates);
+    soundEngine.playSuccess();
+
+    return {
+      cityName: geo.cityName,
+      distanceKm: 0,
+      matchedCity: newProfile,
+      isNewCustom: true
+    };
+  }, [allCitiesMap, selectedCity, changeCity]);
+
+  // ➕ ADD CUSTOM CITY MANUALLY
+  const addNewCustomCity = useCallback((
+    name: string,
+    country: string,
+    flag: string,
+    coordinates: [number, number],
+    tagline?: string
+  ) => {
+    soundEngine.playSuccess();
+    const newCityId = `city_${name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Date.now().toString(36).slice(-3)}`;
+    const newProfile = generateCustomCityProfile(
+      newCityId,
+      name.trim(),
+      country.trim() || 'Global',
+      flag || '🏙️',
+      coordinates,
+      tagline
+    );
+
+    saveCustomCityProfile(newProfile);
+    setCustomCities(prev => ({ ...prev, [newCityId]: newProfile }));
+    changeCity(newCityId);
+    return newProfile;
+  }, [changeCity]);
 
   // Custom Incident Placement with DYNAMIC NEAREST HOSPITAL TRIAGE
   const addCustomIncidentAt = useCallback((coords: [number, number], category: 'accident' | 'utility' = 'accident') => {
@@ -372,7 +482,7 @@ export const CityProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, 400);
   }, [simParams, selectedCity]);
 
-  // LIVE ANIMATED DISPATCH (Directly tracks the active incident and its specific nearest hospital)
+  // LIVE ANIMATED DISPATCH
   const startAnimatedDispatch = useCallback((incidentId?: string) => {
     soundEngine.playEmergencyPing();
     setIsDispatching(true);
@@ -381,7 +491,6 @@ export const CityProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const incidentList = incidentsCleared ? customIncidents : [...selectedCity.incidents, ...customIncidents];
     
-    // Pick the targeted incident or currently active incident or first incident in list
     const targetIncident = incidentId 
       ? incidentList.find(i => i.id === incidentId) || activeIncident || incidentList[0]
       : activeIncident || incidentList[0];
@@ -514,6 +623,11 @@ export const CityProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setActiveTab,
         selectedCity,
         changeCity,
+        allCitiesList,
+        isLocationModalOpen,
+        setIsLocationModalOpen,
+        detectUserLocation,
+        addNewCustomCity,
         layers,
         toggleLayer,
         setLayerState,

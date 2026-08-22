@@ -10,6 +10,7 @@ import { LandingModal } from './components/layout/LandingModal';
 import { AISolutionsModal } from './components/dashboard/AISolutionsModal';
 import { CityChatbotModal } from './components/chat/CityChatbotModal';
 import { AuthModal } from './components/auth/AuthModal';
+import { LocationPickerModal } from './components/location/LocationPickerModal';
 
 import { CommandCenterView } from './components/views/CommandCenterView';
 import { WhatIfSimulatorView } from './components/views/WhatIfSimulatorView';
@@ -23,7 +24,7 @@ const MainContent: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans antialiased selection:bg-blue-600 selection:text-white">
       
-      {/* Clean Top Header with City Switcher, Sign Up, Log In & Database */}
+      {/* Clean Top Header with City Switcher, Locations, Sign Up, Log In & Database */}
       <Header onOpenPitchModal={() => setIsPitchModalOpen(true)} />
 
       {/* Mobile-Only Tab Bar */}
@@ -39,6 +40,9 @@ const MainContent: React.FC = () => {
         {activeTab === 'emergency-response' && <EmergencySimulatorView />}
         {activeTab === 'architecture' && <ArchitectureView />}
       </main>
+
+      {/* Geolocation & Add Custom City Modal */}
+      <LocationPickerModal />
 
       {/* Authentication & User Database Inspector Modal */}
       <AuthModal />
