@@ -1,13 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { UserProfile, SignUpFormData, LoginFormData } from '../types/auth';
-import { AdminNFCCard } from '../types/nfc';
 import { 
   getDatabaseUsers, 
   getCurrentSessionUser, 
   setCurrentSessionUser, 
   signUpUser, 
   loginUser, 
-  authenticateWithNFCCard,
   toggleUserAdminStatus,
   deleteDatabaseUser,
   exportDatabaseJson
@@ -25,7 +23,6 @@ interface AuthContextType {
   closeAuthModal: () => void;
   signUp: (data: SignUpFormData) => Promise<UserProfile>;
   login: (data: LoginFormData) => Promise<UserProfile>;
-  loginWithNFC: (card: AdminNFCCard) => Promise<UserProfile>;
   logout: () => void;
   toggleUserAdmin: (userId: string) => void;
   removeUser: (userId: string) => void;
@@ -73,13 +70,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return user;
   }, []);
 
-  const loginWithNFC = useCallback(async (card: AdminNFCCard) => {
-    const user = await authenticateWithNFCCard(card);
-    setCurrentUser(user);
-    setAllUsers(getDatabaseUsers());
-    return user;
-  }, []);
-
   const logout = useCallback(() => {
     setCurrentSessionUser(null);
     setCurrentUser(null);
@@ -122,7 +112,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         closeAuthModal,
         signUp,
         login,
-        loginWithNFC,
         logout,
         toggleUserAdmin,
         removeUser,

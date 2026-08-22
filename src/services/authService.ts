@@ -1,5 +1,4 @@
 import { UserProfile, SignUpFormData, LoginFormData } from '../types/auth';
-import { AdminNFCCard } from '../types/nfc';
 
 const STORAGE_USERS_KEY = 'urbantwin_database_users_v3';
 const STORAGE_CURRENT_USER_KEY = 'urbantwin_current_session_v3';
@@ -146,51 +145,6 @@ export async function loginUser(data: LoginFormData): Promise<UserProfile> {
   setCurrentSessionUser(updatedUser);
 
   return updatedUser;
-}
-
-// 🪪 Direct NFC Smart Card Authentication (Grants Full Admin Privileges)
-export async function authenticateWithNFCCard(card: AdminNFCCard): Promise<UserProfile> {
-  const users = getDatabaseUsers();
-  const normalizedEmail = card.email.trim().toLowerCase();
-
-  const found = users.find(u => u.email.toLowerCase() === normalizedEmail);
-  const isSuper = normalizedEmail === 'sanchitsoodan2405@gmail.com';
-
-  let authenticatedUser: UserProfile;
-
-  if (found) {
-    authenticatedUser = {
-      ...found,
-      fullName: card.fullName,
-      role: card.role as any,
-      cityAffiliation: card.city.split('/')[0].trim(),
-      isAdmin: true,
-      isSuperAdmin: isSuper || found.isSuperAdmin,
-      lastLogin: new Date().toISOString(),
-      actionsCount: (found.actionsCount || 0) + 1
-    };
-    const updatedList = users.map(u => u.id === found.id ? authenticatedUser : u);
-    saveDatabaseUsers(updatedList);
-  } else {
-    authenticatedUser = {
-      id: `usr_${card.badgeNumber.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
-      fullName: card.fullName,
-      email: normalizedEmail,
-      password: '@123',
-      role: card.role as any,
-      cityAffiliation: card.city.split('/')[0].trim(),
-      avatarColor: isSuper ? 'bg-indigo-600' : 'bg-blue-600',
-      createdAt: new Date().toISOString(),
-      lastLogin: new Date().toISOString(),
-      actionsCount: 1,
-      isAdmin: true,
-      isSuperAdmin: isSuper
-    };
-    saveDatabaseUsers([...users, authenticatedUser]);
-  }
-
-  setCurrentSessionUser(authenticatedUser);
-  return authenticatedUser;
 }
 
 export function toggleUserAdminStatus(userId: string): UserProfile[] {

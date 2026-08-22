@@ -22,10 +22,9 @@ import { CITIES_DATABASE } from '../../data/citiesData';
 
 interface HeaderProps {
   onOpenPitchModal: () => void;
-  onOpenNFC: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenPitchModal, onOpenNFC }) => {
+export const Header: React.FC<HeaderProps> = ({ onOpenPitchModal }) => {
   const { 
     simulatedTime, 
     soundMuted, 
@@ -192,16 +191,6 @@ export const Header: React.FC<HeaderProps> = ({ onOpenPitchModal, onOpenNFC }) =
           >
             <Bot className="w-4 h-4 text-blue-600" />
             <span className="hidden sm:inline">Ask AI</span>
-          </button>
-
-          {/* NFC Smart Hub Button */}
-          <button
-            onClick={onOpenNFC}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 font-bold text-xs transition cursor-pointer"
-            title="UrbanTwin Physical NFC & Smart Badge Hub"
-          >
-            <span className="text-xs">📡</span>
-            <span className="hidden sm:inline">NFC Hub</span>
           </button>
 
           {/* 👑 ADMIN-ONLY DATABASE BUTTON (HIDDEN FOR ALL REGULAR VISITORS / USERS) */}
