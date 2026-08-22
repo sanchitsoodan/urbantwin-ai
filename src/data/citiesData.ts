@@ -1010,3 +1010,228 @@ export const CITIES_DATABASE: Record<string, CityProfile> = {
     }
   }
 };
+
+// 📍 PATIALA DIGITAL TWIN (Dedicated Location Detection Profile - Hidden from Preset Browser)
+export const PATIALA_PROFILE: CityProfile = {
+  id: 'patiala',
+  name: 'Patiala',
+  country: 'India',
+  flag: '🇮🇳',
+  coordinates: [30.3398, 76.3869],
+  zoom: 14,
+  tagline: 'Historical Royal Heritage & Modern Smart Municipal Operations Cockpit',
+  
+  baselineScore: { overall: 85, traffic: 81, emergency: 89, infrastructure: 83 },
+  baselineSpeedKmh: 34,
+  baselineCongestionPct: 46,
+  baselineAmbulanceEtaMin: 6.8,
+  activeEventsCount: 2,
+
+  baselineWaterMld: 240,
+  baselineEnergyMwh: 850,
+  baselineWasteTons: 310,
+
+  hospitals: [
+    {
+      id: 'HOSP-PTA-01',
+      name: 'GMC & Rajindra Hospital Patiala',
+      coordinates: [30.3445, 76.3980],
+      emergencyCapacityPct: 78,
+      availableBeds: 38,
+      totalBeds: 1100,
+      activeAmbulances: 12,
+      avgResponseTimeMin: 5.8,
+      zone: 'Rajindra Hospital Complex'
+    },
+    {
+      id: 'HOSP-PTA-02',
+      name: 'Vardhman Trauma & Multi-Speciality Hospital',
+      coordinates: [30.3320, 76.3810],
+      emergencyCapacityPct: 62,
+      availableBeds: 24,
+      totalBeds: 180,
+      activeAmbulances: 6,
+      avgResponseTimeMin: 6.4,
+      zone: 'Leela Bhawan / Civil Lines'
+    },
+    {
+      id: 'HOSP-PTA-03',
+      name: 'Amar Hospital & Trauma Centre',
+      coordinates: [30.3510, 76.3750],
+      emergencyCapacityPct: 55,
+      availableBeds: 18,
+      totalBeds: 120,
+      activeAmbulances: 4,
+      avgResponseTimeMin: 7.2,
+      zone: 'Sirhind Road / North Patiala'
+    }
+  ],
+
+  incidents: [
+    {
+      id: 'PTA-101',
+      title: 'Major Multi-Vehicle Crash at Rajpura Road & Urban Estate 2',
+      category: 'accident',
+      responseType: 'ambulance',
+      severity: 'critical',
+      locationName: 'Rajpura Road & Urban Estate Phase 2 Junction',
+      coordinates: [30.3520, 76.4080],
+      timestamp: '4m ago',
+      vehiclesInvolved: 2,
+      affectedRoads: 2,
+      targetDestinationName: 'GMC & Rajindra Hospital Patiala',
+      standardETA: 13.5,
+      optimizedETA: 5.8,
+      status: 'active',
+      description: 'Head-on collision at Rajpura Road junction blocking 2 inbound lanes. Urgent triage to Rajindra Hospital.',
+      standardRoute: [
+        [30.3520, 76.4080],
+        [30.3490, 76.4040],
+        [30.3470, 76.4000],
+        [30.3445, 76.3980]
+      ],
+      optimizedRoute: [
+        [30.3520, 76.4080],
+        [30.3480, 76.4020],
+        [30.3460, 76.3990],
+        [30.3445, 76.3980]
+      ],
+      dispatchButtonText: '▶ Dispatch Green-Wave Ambulance to Rajindra Hospital',
+      vehicleIcon: '🚑'
+    },
+    {
+      id: 'PTA-102',
+      title: 'Main Feeder Pipeline Rupture at Leela Bhawan',
+      category: 'utility',
+      responseType: 'utility_crew',
+      severity: 'high',
+      locationName: 'Leela Bhawan Market Feeder Main',
+      coordinates: [30.3365, 76.3840],
+      timestamp: '15m ago',
+      affectedRoads: 1,
+      targetDestinationName: 'Patiala Municipal Water Substation 2',
+      standardETA: 11.2,
+      optimizedETA: 5.1,
+      status: 'active',
+      description: 'Water distribution main pipe rupture causing water shortage across Leela Bhawan & Mall Road.',
+      standardRoute: [
+        [30.3365, 76.3840],
+        [30.3340, 76.3880],
+        [30.3320, 76.3920]
+      ],
+      optimizedRoute: [
+        [30.3365, 76.3840],
+        [30.3350, 76.3860],
+        [30.3320, 76.3920]
+      ],
+      dispatchButtonText: '▶ Deploy Rapid Water Valve Repair Crew',
+      vehicleIcon: '🔧'
+    }
+  ],
+
+  corridors: [
+    {
+      id: 'CORR-PTA-01',
+      name: 'Rajpura-Patiala Highway Arterial (NH-7)',
+      coordinates: [
+        [30.3580, 76.4180],
+        [30.3500, 76.4020],
+        [30.3420, 76.3920]
+      ],
+      currentDensityPct: 72,
+      avgSpeedKmh: 36,
+      congestionLevel: 'High',
+      zone: 'East Highway Sector'
+    },
+    {
+      id: 'CORR-PTA-02',
+      name: 'Mall Road & Leela Bhawan Commercial Corridor',
+      coordinates: [
+        [30.3380, 76.3820],
+        [30.3350, 76.3890],
+        [30.3310, 76.3950]
+      ],
+      currentDensityPct: 58,
+      avgSpeedKmh: 28,
+      congestionLevel: 'Moderate',
+      zone: 'Central Civil Lines'
+    },
+    {
+      id: 'CORR-PTA-03',
+      name: 'Sirhind Road & Urban Estate Bypass',
+      coordinates: [
+        [30.3620, 76.3680],
+        [30.3540, 76.3620],
+        [30.3480, 76.3550]
+      ],
+      currentDensityPct: 44,
+      avgSpeedKmh: 42,
+      congestionLevel: 'Low',
+      zone: 'North Bypass'
+    }
+  ],
+
+  roadClosureOptions: [
+    {
+      value: 'pta-rajpura-road',
+      label: 'Rajpura Road Highway Bottleneck (Major Congestion)',
+      blockedSegment: [
+        [30.3540, 76.4100],
+        [30.3480, 76.4000]
+      ],
+      detourRoute: [
+        [30.3540, 76.4100],
+        [30.3590, 76.3950],
+        [30.3480, 76.4000]
+      ],
+      detourRoadName: 'Patiala Northern Bypass Diversion',
+      normalTravelMin: 8,
+      blockedTravelMin: 22,
+      detourTravelMin: 11
+    }
+  ],
+
+  rainFloodSegments: [
+    [30.3370, 76.3830],
+    [30.3340, 76.3890]
+  ],
+  rainDetourRoute: [
+    [30.3370, 76.3830],
+    [30.3410, 76.3850],
+    [30.3340, 76.3890]
+  ],
+
+  recommendation: {
+    id: 'REC-PTA-01',
+    issue: 'Rajpura Road inbound bottleneck causing delay to Rajindra Hospital trauma center.',
+    recommendedAction: 'Coordinate dynamic signal green wave along Rajpura Road and divert traffic to Northern Bypass.',
+    targetLocation: 'Rajpura Road & Bahadurgarh Junction',
+    confidencePct: 95,
+    impactMetrics: {
+      travelTimeReductionPct: 42,
+      congestionReductionPct: 28,
+      emergencyTimeReductionPct: 57,
+      resourceSavingsPct: 16
+    },
+    actionItems: [
+      {
+        id: 'ACT-PTA-1',
+        title: 'Rajpura Road Smart Green-Wave Coordination',
+        description: 'Synchronize signal cycle splits between Urban Estate 2 and Rajindra Hospital.',
+        category: 'signal',
+        estimatedTimeSec: 20,
+        benefit: 'Saves 7.7 minutes',
+        active: true
+      },
+      {
+        id: 'ACT-PTA-2',
+        title: 'Leela Bhawan Pressure Bypass Valve Activation',
+        description: 'Reroute water distribution via Sector 2 secondary feeder to restore water pressure.',
+        category: 'water',
+        estimatedTimeSec: 40,
+        benefit: '+85% pressure restored',
+        active: true
+      }
+    ]
+  }
+};
