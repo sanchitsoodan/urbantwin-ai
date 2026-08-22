@@ -8,24 +8,22 @@ import {
   CheckCircle2, 
   Sparkles, 
   ShieldCheck, 
-  MapPin, 
-  Play, 
   Crown, 
-  Droplet, 
-  Car, 
   ArrowRight,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Monitor,
+  Download,
+  Key
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useCity } from '../../context/CityContext';
 import { 
   isWebNFCSupported, 
-  DEMO_NFC_TAGS, 
+  OFFICIAL_NFC_ADMIN_CARDS, 
   startHardwareNFCScan,
-  writeHardwareNFCTag 
+  writeCardToPhysicalTag
 } from '../../services/nfcService';
-import { NFCScanResult, NFCBadgePayload, NFCAssetPayload, NFCDispatchPayload } from '../../types/nfc';
+import { AdminNFCCard } from '../../types/nfc';
 import { soundEngine } from '../../services/audioService';
 
 interface NFCControlModalProps {
@@ -34,76 +32,59 @@ interface NFCControlModalProps {
 }
 
 export const NFCControlModal: React.FC<NFCControlModalProps> = ({ isOpen, onClose }) => {
-  const { login, currentUser, isAdmin } = useAuth();
-  const { 
-    setMapFocusTarget, 
-    setActiveIncident, 
-    startAnimatedDispatch, 
-    setActiveTab, 
-    selectedCity 
-  } = useCity();
+  const { loginWithNFC, currentUser, isAdmin } = useAuth();
 
-  const [activeTab, setActiveTabMode] = useState<'scan' | 'badges' | 'write'>('scan');
+  const [activeSection, setActiveSection] = useState<'hardware' | 'simulator'>('simulator');
   const [hardwareSupported, setHardwareSupported] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
-  const [lastScannedTag, setLastScannedTag] = useState<NFCScanResult | null>(null);
+  const [activeScannedCard, setActiveScannedCard] = useState<AdminNFCCard | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
   const [isWriting, setIsWriting] = useState(false);
 
   useEffect(() => {
-    setHardwareSupported(isWebNFCSupported());
+    const supported = isWebNFCSupported();
+    setHardwareSupported(supported);
+    // If running on a hardware-supported device, default to hardware section
+    if (supported) {
+      setActiveSection('hardware');
+    }
   }, []);
 
   if (!isOpen) return null;
 
-  // Handle Tag Scanned (via Hardware or Virtual Tap)
-  const handleTagAction = async (tag: NFCScanResult) => {
+  // Authenticate Admin with NFC Card
+  const handleAuthenticateCard = async (card: AdminNFCCard, source: 'hardware' | 'simulator') => {
     soundEngine.playSuccess();
-    setLastScannedTag(tag);
+    setActiveScannedCard(card);
+    setStatusMessage(`🪪 NFC Authenticated: ${card.fullName} (${card.role}). Granting Admin Privileges...`);
 
-    if (tag.payload.type === 'badge') {
-      const badge = tag.payload as NFCBadgePayload;
-      setStatusMessage(`🪪 NFC Badge Authenticated: Logging in as ${badge.fullName} (${badge.role})...`);
-      try {
-        await login({ email: badge.email, password: '@123' });
-        setTimeout(() => {
-          setStatusMessage(`✅ Authenticated! Welcome, ${badge.fullName}.`);
-        }, 800);
-      } catch (err: any) {
-        setStatusMessage(`⚠️ ${err?.message || 'Login failed'}`);
-      }
-    } else if (tag.payload.type === 'asset') {
-      const asset = tag.payload as NFCAssetPayload;
-      setStatusMessage(`📍 Physical Asset Located: Focusing map on ${asset.title}...`);
-      setMapFocusTarget(asset.coordinates);
-      setActiveTab('command-center');
+    try {
+      const user = await loginWithNFC(card);
+      setTimeout(() => {
+        setStatusMessage(`✅ Authorized! Logged in as ${user.fullName} with Super-Admin Access.`);
+      }, 700);
       setTimeout(() => {
         onClose();
-      }, 1200);
-    } else if (tag.payload.type === 'dispatch') {
-      const dispatch = tag.payload as NFCDispatchPayload;
-      setStatusMessage(`🚨 NFC Dispatch Authorized: Launching emergency route to ${dispatch.targetHospital}...`);
-      setActiveTab('emergency-response');
-      startAnimatedDispatch();
-      setTimeout(() => {
-        onClose();
-      }, 1200);
+      }, 1600);
+    } catch (err: any) {
+      setStatusMessage(`⚠️ ${err?.message || 'Authentication error'}`);
     }
   };
 
-  const handleStartPhysicalScan = async () => {
+  // Start Real Web NFC Scan
+  const handleStartHardwareScan = async () => {
     if (!hardwareSupported) {
-      setStatusMessage('Web NFC API is active in Simulation Mode. Tap any virtual tag below to test.');
+      setStatusMessage('Web NFC is not supported on this browser/OS. Please use the Simulator Section or Chrome on Android.');
       return;
     }
 
     setIsScanning(true);
-    setStatusMessage('📡 Hold your NFC card or phone tag against the back of this device...');
+    setStatusMessage('📡 Proximity Sensor Active: Hold any of the 4 Admin NFC Cards to the back of your phone...');
 
     await startHardwareNFCScan(
-      (result) => {
+      (matchedCard, serialNumber) => {
         setIsScanning(false);
-        handleTagAction(result);
+        handleAuthenticateCard(matchedCard, 'hardware');
       },
       (err) => {
         setIsScanning(false);
@@ -112,25 +93,22 @@ export const NFCControlModal: React.FC<NFCControlModalProps> = ({ isOpen, onClos
     );
   };
 
-  const handleWriteSampleTag = async (type: 'admin' | 'traffic' | 'water') => {
+  // Write selected Admin profile to a blank physical NTAG card
+  const handleWriteCard = async (card: AdminNFCCard) => {
     if (!hardwareSupported) {
-      setStatusMessage('💡 To write physical NFC tags, open this website in Google Chrome on an NFC-enabled Android phone.');
+      setStatusMessage('💡 To write physical NFC tags, open this URL on an NFC-enabled Android phone with Google Chrome.');
       return;
     }
 
     setIsWriting(true);
-    setStatusMessage('✍️ Approach a blank NFC sticker/card (NTAG213/215/216) to encode...');
+    setStatusMessage(`✍️ Hold a blank NFC card/sticker (NTAG213/215/216) to encode credentials for ${card.fullName}...`);
 
     try {
-      const payloadToWrite = type === 'admin' 
-        ? DEMO_NFC_TAGS[0].payload 
-        : type === 'traffic' ? DEMO_NFC_TAGS[1].payload : DEMO_NFC_TAGS[2].payload;
-
-      await writeHardwareNFCTag(payloadToWrite);
+      await writeCardToPhysicalTag(card);
       soundEngine.playSuccess();
-      setStatusMessage('✅ Successfully encoded UrbanTwin data onto physical NFC tag!');
+      setStatusMessage(`✅ Successfully written NFC credentials for ${card.fullName} onto physical card!`);
     } catch (err: any) {
-      setStatusMessage(`⚠️ Write Error: ${err?.message || 'Failed to write tag'}`);
+      setStatusMessage(`⚠️ Write Error: ${err?.message || 'Failed to write card'}`);
     } finally {
       setIsWriting(false);
     }
@@ -139,7 +117,7 @@ export const NFCControlModal: React.FC<NFCControlModalProps> = ({ isOpen, onClos
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-slate-900/70 backdrop-blur-md animate-in fade-in duration-150">
       
-      <div className="relative w-full max-w-2xl max-h-[92vh] overflow-y-auto card-clean p-6 sm:p-7 rounded-3xl bg-white border-2 border-slate-200 shadow-2xl text-slate-900 z-[10001] flex flex-col">
+      <div className="relative w-full max-w-3xl max-h-[92vh] overflow-y-auto card-clean p-6 sm:p-7 rounded-3xl bg-white border-2 border-slate-200 shadow-2xl text-slate-900 z-[10001] flex flex-col">
         
         {/* Close Button */}
         <button
@@ -152,130 +130,122 @@ export const NFCControlModal: React.FC<NFCControlModalProps> = ({ isOpen, onClos
 
         {/* Modal Header */}
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-200">
-            <Radio className="w-6 h-6 text-indigo-600 animate-pulse" />
+          <div className="p-2.5 rounded-2xl bg-amber-50 text-amber-700 border border-amber-300">
+            <Crown className="w-6 h-6 text-amber-600 animate-pulse" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-indigo-700">
-                IoT Physical-to-Digital Bridge
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-800">
+                4-Card NFC Admin Access Hub
               </span>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                 hardwareSupported 
-                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
-                  : 'bg-blue-50 text-blue-700 border-blue-200'
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300' 
+                  : 'bg-indigo-50 text-indigo-800 border-indigo-200'
               }`}>
-                {hardwareSupported ? '● Web NFC Hardware Ready' : '● NFC Simulator Active'}
+                {hardwareSupported ? '● Web NFC Hardware Connected' : '● Demo & Simulator Active'}
               </span>
             </div>
             <h2 className="text-lg font-extrabold text-slate-900 mt-0.5">
-              UrbanTwin NFC Smart Hub
+              Tap-to-Login Admin Smart Cards
             </h2>
           </div>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="mt-5 flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100 border border-slate-200">
+        {/* SECTION SWITCHER: HARDWARE NFC vs NON-NFC SIMULATOR */}
+        <div className="mt-5 flex items-center gap-2 p-1.5 rounded-2xl bg-slate-100 border border-slate-200">
+          
+          {/* Section 1: Hardware Web NFC */}
           <button
-            onClick={() => setActiveTabMode('scan')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
-              activeTab === 'scan'
-                ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/80'
+            onClick={() => { setActiveSection('hardware'); setStatusMessage(''); }}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${
+              activeSection === 'hardware'
+                ? 'bg-emerald-600 text-white shadow-md'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <Smartphone className="w-3.5 h-3.5" />
-            <span>Tap-to-Action</span>
+            <Smartphone className="w-4 h-4" />
+            <span>1. Physical NFC Reader (NFC Device)</span>
           </button>
 
+          {/* Section 2: Virtual Demo Simulator */}
           <button
-            onClick={() => setActiveTabMode('badges')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
-              activeTab === 'badges'
-                ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/80'
+            onClick={() => { setActiveSection('simulator'); setStatusMessage(''); }}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${
+              activeSection === 'simulator'
+                ? 'bg-indigo-600 text-white shadow-md'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <CreditCard className="w-3.5 h-3.5" />
-            <span>NFC Badges</span>
+            <Monitor className="w-4 h-4" />
+            <span>2. 4-Card Demo (Non-NFC Device)</span>
           </button>
 
-          <button
-            onClick={() => setActiveTabMode('write')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
-              activeTab === 'write'
-                ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/80'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Wifi className="w-3.5 h-3.5" />
-            <span>Encode Tag</span>
-          </button>
         </div>
 
         {/* Live Status Feedback Banner */}
         {statusMessage && (
-          <div className="mt-4 p-3.5 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-950 text-xs flex items-center gap-2 animate-in fade-in-50">
-            <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
+          <div className="mt-4 p-3.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 text-xs flex items-center gap-2 animate-in fade-in-50">
+            <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
             <span className="font-semibold">{statusMessage}</span>
           </div>
         )}
 
-        {/* TAB 1: TAP TO ACTION (SIMULATOR + HARDWARE SCANNER) */}
-        {activeTab === 'scan' && (
-          <div className="mt-4 space-y-4">
+        {/* ========================================================================= */}
+        {/* SECTION 1: HARDWARE WEB NFC SCANNER (FOR NFC-ENABLED DEVICES / PHONES) */}
+        {/* ========================================================================= */}
+        {activeSection === 'hardware' && (
+          <div className="mt-4 space-y-4 animate-in fade-in-50">
             
-            {/* Tap Scanner Visual Dock */}
-            <div className="p-6 rounded-3xl bg-gradient-to-br from-indigo-500/10 via-blue-500/5 to-slate-50 border-2 border-indigo-200 text-center space-y-3 relative overflow-hidden">
-              <div className="w-16 h-16 rounded-full bg-indigo-600 text-white mx-auto flex items-center justify-center shadow-lg shadow-indigo-500/30 animate-pulse">
-                <Radio className="w-8 h-8" />
+            <div className="p-3 rounded-2xl bg-emerald-50/80 border border-emerald-300 text-xs text-emerald-950">
+              📡 <b>Physical NFC Reader Mode:</b> Touch any physical NFC Smart Card or programmed sticker tag to the back of your NFC-enabled phone to authenticate automatically.
+            </div>
+
+            {/* Scanning Radar Dock */}
+            <div className="p-8 rounded-3xl bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-slate-50 border-2 border-emerald-300 text-center space-y-3.5 relative overflow-hidden">
+              <div className="w-20 h-20 rounded-full bg-emerald-600 text-white mx-auto flex items-center justify-center shadow-xl shadow-emerald-500/30 animate-pulse">
+                <Radio className="w-10 h-10" />
               </div>
 
               <div>
-                <h3 className="text-sm font-extrabold text-slate-900">
-                  {isScanning ? 'Scanning for Nearby NFC Tags...' : 'NFC Proximity Sensor Active'}
+                <h3 className="text-base font-extrabold text-slate-900">
+                  {isScanning ? 'Listening for Physical NFC Card...' : 'Hardware Web NFC Reader Ready'}
                 </h3>
-                <p className="text-xs text-slate-600 mt-0.5 max-w-md mx-auto">
-                  Tap physical NFC tags (cards/stickers) or click any virtual smart card below to instantly trigger digital twin actions.
+                <p className="text-xs text-slate-600 mt-1 max-w-md mx-auto leading-relaxed">
+                  {hardwareSupported 
+                    ? 'Click below and hold any of the 4 Admin NFC Cards flat against your phone sensor.'
+                    : 'To test physical hardware reading, open this website on Google Chrome on an Android smartphone.'}
                 </p>
               </div>
 
               <button
-                onClick={handleStartPhysicalScan}
-                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs shadow-md transition transform hover:scale-105 cursor-pointer"
+                onClick={handleStartHardwareScan}
+                className="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-lg shadow-emerald-600/25 transition transform hover:scale-105 cursor-pointer"
               >
-                {isScanning ? '📡 Listening for Tag...' : '📱 Start Physical NFC Reader'}
+                {isScanning ? '📡 Sensor Active • Touch Card...' : '▶ Start Live NFC Hardware Scan'}
               </button>
             </div>
 
-            {/* Virtual Interactive NFC Tag List */}
-            <div className="space-y-2">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                1-Click Virtual NFC Tags (Click to Emulate Tag Proximity Tap):
-              </span>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {DEMO_NFC_TAGS.map((tag) => (
-                  <div
-                    key={tag.serialNumber}
-                    onClick={() => handleTagAction(tag)}
-                    className="p-3.5 rounded-2xl bg-white border-2 border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/40 transition cursor-pointer shadow-xs group"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-900 group-hover:text-indigo-700 transition">
-                        {tag.label}
-                      </span>
-                      <span className="text-[9px] font-mono text-slate-400">
-                        {tag.serialNumber.split(':').slice(-2).join(':')}
-                      </span>
+            {/* 4 Cards Reference Table */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-2">
+              <span className="font-bold text-slate-800 block">Accepted Physical NFC Cards:</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                {OFFICIAL_NFC_ADMIN_CARDS.map(card => (
+                  <div key={card.id} className="p-2.5 rounded-xl bg-white border border-slate-200 flex items-center justify-between">
+                    <div>
+                      <span className="font-bold text-slate-900 block">{card.icon} {card.fullName}</span>
+                      <span className="text-[10px] text-slate-500">{card.role}</span>
                     </div>
-                    <p className="text-[11px] text-slate-500 mt-1">
-                      {tag.timestamp}
-                    </p>
-                    <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-indigo-700 font-bold">
-                      <span>Tap to Trigger</span>
-                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                    </div>
+                    {hardwareSupported && (
+                      <button
+                        onClick={() => handleWriteCard(card)}
+                        disabled={isWriting}
+                        className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold hover:bg-emerald-100"
+                        title="Encode this profile onto a blank physical card"
+                      >
+                        Encode
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -284,112 +254,67 @@ export const NFCControlModal: React.FC<NFCControlModalProps> = ({ isOpen, onClos
           </div>
         )}
 
-        {/* TAB 2: SMART CITY NFC BADGES */}
-        {activeTab === 'badges' && (
-          <div className="mt-4 space-y-4">
-            <div className="p-3.5 rounded-2xl bg-blue-50 border border-blue-200 text-xs text-blue-900">
-              🪪 <b>Zero-Password NFC Authentication:</b> Municipal directors and field personnel carry encrypted NFC smart badges. Touching their badge instantly unlocks privileged command access.
+        {/* ========================================================================= */}
+        {/* SECTION 2: 4-CARD DEMO SIMULATOR (FOR NON-NFC DEVICES / MAC / PC / DEMOS) */}
+        {/* ========================================================================= */}
+        {activeSection === 'simulator' && (
+          <div className="mt-4 space-y-4 animate-in fade-in-50">
+            
+            <div className="p-3 rounded-2xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-950">
+              💻 <b>Non-NFC Device Presentation Mode:</b> Tap any of the 4 official Admin NFC Cards below to simulate an instant NFC proximity touch and log in with full Admin powers!
             </div>
 
-            {/* Super Admin Badge Card */}
-            <div 
-              onClick={() => handleTagAction(DEMO_NFC_TAGS[0])}
-              className="p-5 rounded-3xl bg-gradient-to-r from-indigo-900 to-slate-900 text-white shadow-xl border-2 border-indigo-400 cursor-pointer relative overflow-hidden group transform hover:scale-[1.01] transition"
-            >
-              <div className="absolute right-4 top-4 text-white/10 group-hover:text-white/20 transition">
-                <Wifi className="w-20 h-20" />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400 flex items-center gap-1">
-                  <Crown className="w-3.5 h-3.5" />
-                  Official Municipal Smart Card
-                </span>
-                <span className="text-[9px] font-mono text-slate-400">NFC NTAG216</span>
-              </div>
-
-              <div className="mt-4">
-                <h3 className="text-base font-extrabold text-white">
-                  Sanchit Soodan
-                </h3>
-                <p className="text-xs text-indigo-200 font-medium">
-                  Super Admin • System Owner
-                </p>
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-[11px] text-amber-300 font-bold">
-                <span>sanchitsoodan2405@gmail.com</span>
-                <span>👉 Tap to Instant Login</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: ENCODE REAL PHYSICAL NFC TAGS */}
-        {activeTab === 'write' && (
-          <div className="mt-4 space-y-4">
-            <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-300 text-xs text-amber-950">
-              ✍️ <b>Write Physical NFC Stickers:</b> You can write live digital twin coordinates, Green-Wave route payloads, or Admin Identity onto any physical <b>NTAG213 / NTAG215 / NTAG216</b> NFC sticker.
-            </div>
-
-            <div className="space-y-2.5">
-              <span className="text-xs font-bold text-slate-700 block">
-                Choose Data Payload to Encode on Physical Tag:
-              </span>
-
-              <div className="space-y-2">
-                <button
-                  onClick={() => handleWriteSampleTag('admin')}
-                  disabled={isWriting}
-                  className="w-full p-3.5 rounded-2xl bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 text-left transition flex items-center justify-between text-xs cursor-pointer"
+            {/* 4 Physical NFC Card Renders Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {OFFICIAL_NFC_ADMIN_CARDS.map((card) => (
+                <div
+                  key={card.id}
+                  onClick={() => handleAuthenticateCard(card, 'simulator')}
+                  className={`p-5 rounded-3xl bg-gradient-to-br ${card.themeGradient} text-white shadow-xl border-2 border-white/20 hover:border-amber-400 cursor-pointer relative overflow-hidden group transform hover:scale-[1.02] transition-all flex flex-col justify-between min-h-[170px]`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-indigo-100 text-indigo-700 font-bold">
-                      👑
-                    </div>
-                    <div>
-                      <span className="font-bold text-slate-900 block">Sanchit Soodan Super-Admin Smart Card</span>
-                      <span className="text-[11px] text-slate-500">Encodes instant auth token for automated login</span>
-                    </div>
+                  {/* Decorative Watermark */}
+                  <div className="absolute right-3 top-3 text-white/10 group-hover:text-white/20 transition">
+                    <Wifi className="w-16 h-16" />
                   </div>
-                  <span className="text-xs font-bold text-indigo-700">Write Tag ↗</span>
-                </button>
 
-                <button
-                  onClick={() => handleWriteSampleTag('traffic')}
-                  disabled={isWriting}
-                  className="w-full p-3.5 rounded-2xl bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 text-left transition flex items-center justify-between text-xs cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-blue-100 text-blue-700 font-bold">
-                      🚦
-                    </div>
-                    <div>
-                      <span className="font-bold text-slate-900 block">Sector 17 Traffic Controller IoT Tag</span>
-                      <span className="text-[11px] text-slate-500">Encodes junction coordinates [30.7415, 76.7825]</span>
-                    </div>
+                  {/* Card Header */}
+                  <div className="flex items-center justify-between z-10">
+                    <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${card.badgeAccent} flex items-center gap-1`}>
+                      <span>{card.icon}</span>
+                      <span>{card.badgeNumber}</span>
+                    </span>
+                    <span className="text-[9px] font-mono text-slate-400">UID: {card.cardUid}</span>
                   </div>
-                  <span className="text-xs font-bold text-blue-700">Write Tag ↗</span>
-                </button>
 
-                <button
-                  onClick={() => handleWriteSampleTag('water')}
-                  disabled={isWriting}
-                  className="w-full p-3.5 rounded-2xl bg-slate-50 hover:bg-sky-50 border border-slate-200 hover:border-sky-300 text-left transition flex items-center justify-between text-xs cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-sky-100 text-sky-700 font-bold">
-                      🚰
-                    </div>
-                    <div>
-                      <span className="font-bold text-slate-900 block">Sector 34 Water Valve Feeder Tag</span>
-                      <span className="text-[11px] text-slate-500">Encodes utility valve telemetry coordinates</span>
-                    </div>
+                  {/* Card Body */}
+                  <div className="my-3 z-10">
+                    <h3 className="text-base font-extrabold text-white group-hover:text-amber-300 transition">
+                      {card.fullName}
+                    </h3>
+                    <p className="text-xs text-slate-300 font-medium">
+                      {card.role}
+                    </p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">
+                      {card.city}
+                    </p>
                   </div>
-                  <span className="text-xs font-bold text-sky-700">Write Tag ↗</span>
-                </button>
-              </div>
+
+                  {/* Card Footer */}
+                  <div className="pt-2.5 border-t border-white/10 flex items-center justify-between text-[11px] font-bold text-amber-300 z-10">
+                    <span className="text-[10px] text-slate-400 font-normal truncate max-w-[140px]">{card.email}</span>
+                    <span className="flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                      <span>👉 Tap Card</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
+
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-center text-xs text-slate-500">
+              💡 Tapping any card registers/authenticates the operator and unlocks the <b>👑 Admin DB</b> and full control panel.
+            </div>
+
           </div>
         )}
 
