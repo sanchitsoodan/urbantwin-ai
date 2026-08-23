@@ -19,29 +19,24 @@ import {
   Globe
 } from 'lucide-react';
 import { useCity } from '../../context/CityContext';
-import { useDemo } from '../../context/DemoContext';
 import { useAuth } from '../../context/AuthContext';
 import { AIConfidenceMeter } from '../common/AIConfidenceMeter';
 
 interface HeaderProps {
-  onOpenPitchModal: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenPitchModal }) => {
+export const Header: React.FC<HeaderProps> = () => {
   const { 
     simulatedTime, 
-    soundMuted, 
-    toggleSound, 
     activeTab, 
     setActiveTab,
     selectedCity,
-    changeCity,
-    allCitiesList,
+    soundMuted,
+    toggleSound,
     setIsLocationModalOpen,
     setIsChatbotOpen
   } = useCity();
 
-  const { isDemoRunning, startDemo, stopDemo } = useDemo();
   const { currentUser, logout, openAuthModal, allUsers, isAdmin } = useAuth();
   
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -53,10 +48,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenPitchModal }) => {
         {/* Left: Brand Logo & Interactive City Switcher */}
         <div className="flex items-center gap-3 sm:gap-4">
           
-          {/* Logo */}
+          {/* Logo (Navigates to Home Dashboard) */}
           <div 
-            onClick={onOpenPitchModal}
+            onClick={() => setActiveTab('command-center')}
             className="flex items-center gap-2.5 cursor-pointer group"
+            title="UrbanTwin AI Dashboard"
           >
             <div className="p-2 rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-500/20 group-hover:scale-105 transition">
               <Building2 className="w-5 h-5" />

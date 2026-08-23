@@ -24,6 +24,7 @@ import {
   WhatIfSimulationResult 
 } from '../../types/pandemic';
 import { SectorImpactCard } from '../pandemic/SectorImpactCard';
+import { PandemicMap } from '../pandemic/PandemicMap';
 import { PandemicTimelineController } from '../pandemic/PandemicTimelineController';
 import { PandemicWhatIfController } from '../pandemic/PandemicWhatIfController';
 import { RecoveryVisualisationChart } from '../pandemic/RecoveryVisualisationChart';
@@ -59,7 +60,7 @@ export const PandemicView: React.FC = () => {
   const handleToggleRecoveryMode = (recovery: boolean) => {
     setIsRecoveryMode(recovery);
     if (recovery && currentDay < 90) {
-      setCurrentDay(90);
+      setCurrentDay(120);
     } else if (!recovery && currentDay > 90) {
       setCurrentDay(90);
     }
@@ -94,12 +95,12 @@ export const PandemicView: React.FC = () => {
               <span className="font-bold text-slate-900">Duration:</span> 90 Days (Recovery to 365d)
             </span>
             <span className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200 text-slate-700">
-              <span className="font-bold text-slate-900">Mode:</span> Simulation
+              <span className="font-bold text-slate-900">Mode:</span> {isRecoveryMode ? 'Recovery Mode' : 'Simulation'}
             </span>
           </div>
         </div>
 
-        {/* Action Button to Pricing */}
+        {/* Action Button to Pricing / Plans */}
         <div className="flex items-center gap-2.5 shrink-0 self-start md:self-auto">
           <button
             onClick={() => setActiveTab('pricing')}
@@ -119,7 +120,58 @@ export const PandemicView: React.FC = () => {
         </span>
       </div>
 
-      {/* 2. LARGE AVERAGE IMPACT SCORE BANNER */}
+      {/* 2. PANDEMIC EMERGENCY MAP (HOSPITALS, DISPENSARIES, TESTING BOOTHS, OXYGEN, QUARANTINE ZONES) */}
+      <PandemicMap />
+
+      {/* 3. DEDICATED RECOVERY MODE BANNER (When Day > 90 or Recovery Mode Active) */}
+      {isRecoveryMode ? (
+        <div className="card-clean p-6 sm:p-7 rounded-3xl bg-gradient-to-r from-emerald-50 via-teal-50 to-blue-50 border-2 border-emerald-300 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-5 animate-in fade-in-50">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                POST-PANDEMIC RESTORATION
+              </span>
+              <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-200 text-emerald-950 border border-emerald-400">
+                {recoveryStage}
+              </span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              RECOVERY MODE
+            </h2>
+            <p className="text-xs text-slate-600 max-w-xl font-medium leading-relaxed">
+              The pandemic period has ended. Explore how the city could recover over time as hospital pressures ease, economic activity reopens, and supply chains normalize.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 self-start md:self-auto">
+            <button
+              onClick={() => handleToggleRecoveryMode(false)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-extrabold transition cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Back to Day 0–90 Outbreak</span>
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* Quick Banner to jump into Recovery Mode */
+        <div className="p-4 rounded-2xl bg-slate-100/90 border border-slate-200 flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-slate-700 font-bold">
+            <span className="text-base">🌅</span>
+            <span>Looking for post-pandemic urban rebound?</span>
+          </div>
+          <button
+            onClick={() => handleToggleRecoveryMode(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-xs transition cursor-pointer"
+          >
+            <span>Enter Recovery Mode (Day 90–365)</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* 4. LARGE AVERAGE IMPACT SCORE BANNER */}
       <div className={`p-6 sm:p-7 rounded-3xl ${statusColors.bg} border-2 ${statusColors.border} shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-5`}>
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -165,7 +217,7 @@ export const PandemicView: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. PANDEMIC TIMELINE CONTROLLER */}
+      {/* 5. PANDEMIC TIMELINE CONTROLLER */}
       <PandemicTimelineController
         currentDay={currentDay}
         onDayChange={handleDayChange}

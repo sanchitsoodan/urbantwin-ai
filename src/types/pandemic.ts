@@ -55,6 +55,28 @@ export interface PandemicTimelinePoint {
   environment: number;
 }
 
+export type PandemicFacilityType = 'hospital' | 'dispensary' | 'testing_booth' | 'oxygen_depot' | 'containment_zone';
+
+export interface PandemicFacility {
+  id: string;
+  name: string;
+  type: PandemicFacilityType;
+  coordinates: [number, number];
+  address: string;
+  isOpen: boolean;
+  statusText: string;
+  contactNumber?: string;
+  
+  // Specific metrics
+  availableBeds?: number;
+  totalBeds?: number;
+  icuBeds?: number;
+  dailyTestingCapacity?: number;
+  currentWaitTimeMin?: number;
+  oxygenStockCylinders?: number;
+  quarantineRadiusMeters?: number;
+}
+
 export interface EnterpriseQuoteRequest {
   id: string;
   name: string;
