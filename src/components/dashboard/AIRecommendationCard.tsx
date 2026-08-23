@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { useCity } from '../../context/CityContext';
 
+import { AIConfidenceMeter } from '../common/AIConfidenceMeter';
+
 export const AIRecommendationCard: React.FC = () => {
   const { 
     activeRecommendation, 
@@ -34,14 +36,15 @@ export const AIRecommendationCard: React.FC = () => {
             <Zap className="w-4 h-4" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-bold uppercase tracking-wider text-blue-700">
                 AI Solutions Engine • {selectedCity.name}
               </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                <Sparkles className="w-2.5 h-2.5" />
-                {activeRecommendation.confidencePct}% Confidence
-              </span>
+              <AIConfidenceMeter 
+                score={activeRecommendation.confidencePct || 96.2} 
+                label="Neural Confidence" 
+                variant="badge" 
+              />
             </div>
             <h3 className="text-sm font-bold text-slate-900 mt-0.5">
               {activeRecommendation.issue}

@@ -9,6 +9,7 @@ import {
   Play
 } from 'lucide-react';
 import { useCity } from '../../context/CityContext';
+import { AIConfidenceMeter } from '../common/AIConfidenceMeter';
 
 export const IncidentModal: React.FC = () => {
   const { 
@@ -72,7 +73,10 @@ export const IncidentModal: React.FC = () => {
             <Hospital className="w-4 h-4 text-blue-600" />
             <span className="font-bold">Target Destination</span>
           </div>
-          <p className="text-[11px] text-blue-800 font-medium">{activeIncident.targetDestinationName}</p>
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-[11px] text-blue-800 font-medium">{activeIncident.targetDestinationName}</span>
+            <AIConfidenceMeter score={97.4} label="Routing Confidence" variant="badge" />
+          </div>
 
           <div className="grid grid-cols-2 gap-2 pt-2 border-t border-blue-100">
             <div className="p-2 rounded-xl bg-white border border-slate-200">

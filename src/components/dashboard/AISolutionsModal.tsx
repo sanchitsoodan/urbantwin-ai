@@ -15,6 +15,7 @@ import {
   Route
 } from 'lucide-react';
 import { useCity } from '../../context/CityContext';
+import { AIConfidenceMeter } from '../common/AIConfidenceMeter';
 
 export const AISolutionsModal: React.FC = () => {
   const { 
@@ -79,13 +80,14 @@ export const AISolutionsModal: React.FC = () => {
             <Route className="w-6 h-6 text-emerald-600 animate-pulse" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">
                 AI Traffic Bypass & Solutions Plan
               </span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">
                 {selectedCity.name}
               </span>
+              <AIConfidenceMeter score={96.8} label="Optimization Confidence" variant="badge" />
             </div>
             <h2 className="text-lg font-extrabold text-slate-900 mt-0.5">
               Proposed Low-Traffic Bypass Routes & Interventions

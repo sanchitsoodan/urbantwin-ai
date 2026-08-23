@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { useCity } from '../../context/CityContext';
 
+import { AIConfidenceMeter } from '../common/AIConfidenceMeter';
+
 export const CommandCenterView: React.FC = () => {
   const { 
     setActiveTab, 
@@ -30,13 +32,14 @@ export const CommandCenterView: React.FC = () => {
       {/* Friendly Guide & Quick Actions Bar */}
       <div className="card-clean p-4 rounded-3xl bg-white border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-sm font-bold text-slate-900">
               {selectedCity.name} Operations Cockpit
             </h2>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
               {selectedCity.country} {selectedCity.flag}
             </span>
+            <AIConfidenceMeter score={96.4} label="Real-Time Telemetry Precision" variant="badge" />
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
             {selectedCity.tagline} • Click markers to view real-time status or place custom events on the map.

@@ -31,6 +31,7 @@ import {
 } from 'recharts';
 import { useCity } from '../../context/CityContext';
 import { CityMap } from '../map/CityMap';
+import { AIConfidenceMeter } from '../common/AIConfidenceMeter';
 
 export const WhatIfSimulatorView: React.FC = () => {
   const { 
@@ -115,13 +116,14 @@ export const WhatIfSimulatorView: React.FC = () => {
             <SlidersHorizontal className="w-5 h-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-base sm:text-lg font-bold text-slate-900">
                 What-If Multi-Scenario Sandbox
               </h1>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
                 {selectedCity.name} {selectedCity.flag}
               </span>
+              <AIConfidenceMeter score={95.6} label="Physics Simulation Fidelity" variant="badge" />
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
               Choose between Traffic Road Bottlenecks and Urban Population Resource Surge simulations.

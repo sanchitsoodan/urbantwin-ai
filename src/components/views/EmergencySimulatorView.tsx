@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useCity } from '../../context/CityContext';
 import { CityMap } from '../map/CityMap';
+import { AIConfidenceMeter } from '../common/AIConfidenceMeter';
 
 interface TimelineStep {
   step: number;
@@ -78,13 +79,14 @@ export const EmergencySimulatorView: React.FC = () => {
             <Ambulance className="w-5 h-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-base sm:text-lg font-bold text-slate-900">
                 Nearest Hospital Dispatch & Green-Wave Simulator
               </h1>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                 {selectedCity.name} {selectedCity.flag}
               </span>
+              <AIConfidenceMeter score={97.8} label="Triage & Bed Precision" variant="badge" />
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
               UrbanTwin dynamically matches every accident to the closest available hospital based on live road distance and open ICU beds.

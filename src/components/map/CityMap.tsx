@@ -13,6 +13,7 @@ import { MapLayerSidebar, MAP_TILE_PROVIDERS } from './MapLayerSidebar';
 import { IncidentModal } from './IncidentModal';
 import { AnimatedDispatchAmbulance } from './AnimatedDispatchAmbulance';
 import { MapLegend } from './MapLegend';
+import { AIConfidenceMeter } from '../common/AIConfidenceMeter';
 import { 
   Sparkles, 
   AlertTriangle, 
@@ -250,6 +251,11 @@ export const CityMap: React.FC<CityMapProps> = ({ customHeight, hideSidebar }) =
             <span>Restore Defaults</span>
           </button>
         )}
+      </div>
+
+      {/* Floating AI Twin Model Confidence Indicator */}
+      <div className="absolute bottom-3 left-3 z-[1000] hidden sm:block">
+        <AIConfidenceMeter score={96.4} label="Twin Accuracy" variant="map-pill" />
       </div>
 
       {/* AI LOW-TRAFFIC BYPASS ACTIVE BANNER */}

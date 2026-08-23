@@ -21,6 +21,7 @@ import {
 import { useCity } from '../../context/CityContext';
 import { useDemo } from '../../context/DemoContext';
 import { useAuth } from '../../context/AuthContext';
+import { AIConfidenceMeter } from '../common/AIConfidenceMeter';
 
 interface HeaderProps {
   onOpenPitchModal: () => void;
@@ -228,6 +229,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenPitchModal }) => {
           <div className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-slate-100 border border-slate-200 text-xs font-mono text-slate-700 font-bold">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>{simulatedTime}</span>
+          </div>
+
+          {/* AI Prediction Confidence Meter */}
+          <div className="hidden lg:flex items-center">
+            <AIConfidenceMeter score={96.4} label="AI Confidence" variant="header-pill" />
           </div>
 
           {/* Ask AI Copilot Button */}
