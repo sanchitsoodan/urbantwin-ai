@@ -8,7 +8,8 @@ import {
   Clock,
   Flame,
   ShieldCheck,
-  TrendingDown
+  TrendingDown,
+  Lock
 } from 'lucide-react';
 
 interface PandemicTimelineControllerProps {
@@ -16,29 +17,50 @@ interface PandemicTimelineControllerProps {
   onDayChange: (day: number) => void;
   isRecoveryMode: boolean;
   onToggleRecoveryMode: (recovery: boolean) => void;
+  isBusinessSubscribed?: boolean;
+  onPromptUpgrade?: () => void;
 }
 
 export const PandemicTimelineController: React.FC<PandemicTimelineControllerProps> = ({
   currentDay,
   onDayChange,
   isRecoveryMode,
-  onToggleRecoveryMode
+  onToggleRecoveryMode,
+  isBusinessSubscribed = false,
+  onPromptUpgrade
 }) => {
   const minDay = isRecoveryMode ? 90 : 0;
   const maxDay = isRecoveryMode ? 365 : 90;
 
   const milestones = isRecoveryMode ? [
-    { day: 90, label: 'Day 90', desc: 'Recovery Starts' },
-    { day: 120, label: 'Day 120', desc: 'Early Recovery' },
-    { day: 180, label: 'Day 180', desc: 'Mid Recovery' },
-    { day: 270, label: 'Day 270', desc: 'Near Baseline' },
-    { day: 365, label: 'Day 365', desc: 'Full Resilience' }
+    { day: 90, label: 'Day 90', desc: 'Recovery Starts', isPremium: false },
+    { day: 120, label: 'Day 120', desc: 'Early Recovery', isPremium: true },
+    { day: 180, label: 'Day 180', desc: 'Mid Recovery', isPremium: true },
+    { day: 270, label: 'Day 270', desc: 'Near Baseline', isPremium: true },
+    { day: 365, label: 'Day 365', desc: 'Full Resilience', isPremium: true }
   ] : [
-    { day: 0, label: 'Day 0', desc: 'Pandemic Begins' },
-    { day: 30, label: 'Day 30', desc: 'Healthcare Surge' },
-    { day: 60, label: 'Day 60', desc: 'Supply Chain Strain' },
-    { day: 90, label: 'Day 90', desc: 'Peak Crisis Period' }
+    { day: 0, label: 'Day 0', desc: 'Pandemic Begins', isPremium: false },
+    { day: 30, label: 'Day 30', desc: 'Healthcare Surge', isPremium: false },
+    { day: 60, label: 'Day 60', desc: 'Supply Chain Strain', isPremium: false },
+    { day: 90, label: 'Day 90', desc: 'Peak Crisis Period', isPremium: false }
   ];
+
+  const handleModeSwitch = () => {
+    if (!isRecoveryMode && !isBusinessSubscribed) {
+      if (onPromptUpgrade) onPromptUpgrade();
+      return;
+    }
+    onToggleRecoveryMode(true);
+    onDayChange(120);
+  };
+
+  const handleMilestoneClick = (day: number, isPremium: boolean) => {
+    if (isPremium && !isBusinessSubscribed) {
+      if (onPromptUpgrade) onPromptUpgrade();
+      return;
+    }
+    onDayChange(day);
+  };
 
   return (
     <div className="card-clean p-5 sm:p-6 rounded-3xl bg-white border-2 border-slate-200 shadow-sm space-y-4">
@@ -72,13 +94,11 @@ export const PandemicTimelineController: React.FC<PandemicTimelineControllerProp
         <div className="flex items-center gap-2">
           {!isRecoveryMode ? (
             <button
-              onClick={() => {
-                onToggleRecoveryMode(true);
-                onDayChange(120);
-              }}
+              onClick={handleModeSwitch}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-extrabold transition cursor-pointer"
               title="Switch to Recovery Mode (Day 90 - 365)"
             >
+              {!isBusinessSubscribed && <Lock className="w-3 h-3 text-amber-600" />}
               <span>Explore Recovery Mode</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
@@ -114,7 +134,7 @@ export const PandemicTimelineController: React.FC<PandemicTimelineControllerProp
           </div>
         </div>
 
-        {/* Native Range Slider with Custom Tailwind Styling */}
+        {/* Range Slider */}
         <div className="relative py-2">
           <input
             type="range"
@@ -124,6 +144,11 @@ export const PandemicTimelineController: React.FC<PandemicTimelineControllerProp
             value={currentDay}
             onChange={(e) => {
               const val = Number(e.target.value);
+              if (val > 90 && !isBusinessSubscribed) {
+                if (onPromptUpgrade) onPromptUpgrade();
+                onDayChange(90);
+                return;
+              }
               onDayChange(val);
               if (val > 90 && !isRecoveryMode) {
                 onToggleRecoveryMode(true);
@@ -140,17 +165,22 @@ export const PandemicTimelineController: React.FC<PandemicTimelineControllerProp
             return (
               <button
                 key={m.day}
-                onClick={() => onDayChange(m.day)}
-                className={`p-2.5 rounded-2xl border text-left transition cursor-pointer ${
+                onClick={() => handleMilestoneClick(m.day, m.isPremium)}
+                className={`p-2.5 rounded-2xl border text-left transition cursor-pointer relative ${
                   isSelected
                     ? 'bg-blue-50 border-blue-500 shadow-xs'
                     : 'bg-slate-50 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className={`text-xs font-extrabold ${isSelected ? 'text-blue-700' : 'text-slate-900'}`}>
-                    {m.label}
-                  </span>
+                  <div className="flex items-center gap-1">
+                    <span className={`text-xs font-extrabold ${isSelected ? 'text-blue-700' : 'text-slate-900'}`}>
+                      {m.label}
+                    </span>
+                    {m.isPremium && !isBusinessSubscribed && (
+                      <Lock className="w-2.5 h-2.5 text-amber-600 inline" />
+                    )}
+                  </div>
                   {isSelected && <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping" />}
                 </div>
                 <p className="text-[10px] text-slate-500 font-medium truncate mt-0.5">

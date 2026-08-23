@@ -16,6 +16,12 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  isBusinessSubscribed: boolean;
+  activateBusinessSubscription: () => void;
+  cancelBusinessSubscription: () => void;
+  isPaymentModalOpen: boolean;
+  openPaymentModal: () => void;
+  closePaymentModal: () => void;
   allUsers: UserProfile[];
   isAuthModalOpen: boolean;
   authModalMode: 'login' | 'signup' | 'database';
@@ -36,12 +42,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [allUsers, setAllUsers] = useState<UserProfile[]>(() => getDatabaseUsers());
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup' | 'database'>('signup');
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+  const [isBusinessSubscribed, setIsBusinessSubscribed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('urbantwin_business_subscribed') === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   const isAdmin = !!(currentUser && currentUser.isAdmin);
   const isSuperAdmin = !!(currentUser && currentUser.isSuperAdmin);
 
+  const activateBusinessSubscription = useCallback(() => {
+    setIsBusinessSubscribed(true);
+    try {
+      localStorage.setItem('urbantwin_business_subscribed', 'true');
+    } catch {}
+  }, []);
+
+  const cancelBusinessSubscription = useCallback(() => {
+    setIsBusinessSubscribed(false);
+    try {
+      localStorage.removeItem('urbantwin_business_subscribed');
+    } catch {}
+  }, []);
+
+  const openPaymentModal = useCallback(() => {
+    setIsPaymentModalOpen(true);
+  }, []);
+
+  const closePaymentModal = useCallback(() => {
+    setIsPaymentModalOpen(false);
+  }, []);
+
   const openAuthModal = useCallback((mode: 'login' | 'signup' | 'database' = 'signup') => {
-    // If trying to open database but not an admin, redirect to login
     if (mode === 'database' && !currentUser?.isAdmin) {
       setAuthModalMode('login');
     } else {
@@ -105,6 +141,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!currentUser,
         isAdmin,
         isSuperAdmin,
+        isBusinessSubscribed,
+        activateBusinessSubscription,
+        cancelBusinessSubscription,
+        isPaymentModalOpen,
+        openPaymentModal,
+        closePaymentModal,
         allUsers,
         isAuthModalOpen,
         authModalMode,

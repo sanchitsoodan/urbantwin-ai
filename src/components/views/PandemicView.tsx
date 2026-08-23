@@ -11,9 +11,11 @@ import {
   RotateCcw,
   CheckCircle2,
   Lock,
-  Globe
+  Globe,
+  Zap
 } from 'lucide-react';
 import { useCity } from '../../context/CityContext';
+import { useAuth } from '../../context/AuthContext';
 import { 
   DEFAULT_PANDEMIC_WHAT_IF, 
   calculateSectorImpacts,
@@ -32,6 +34,7 @@ import { AIConfidenceMeter } from '../common/AIConfidenceMeter';
 
 export const PandemicView: React.FC = () => {
   const { selectedCity, setActiveTab } = useCity();
+  const { isBusinessSubscribed, openPaymentModal } = useAuth();
 
   const [currentDay, setCurrentDay] = useState<number>(30);
   const [isRecoveryMode, setIsRecoveryMode] = useState<boolean>(false);
@@ -49,6 +52,10 @@ export const PandemicView: React.FC = () => {
   const statusColors = getStatusColor(averageImpactStatus);
 
   const handleDayChange = (day: number) => {
+    if (day > 90 && !isBusinessSubscribed) {
+      openPaymentModal();
+      return;
+    }
     setCurrentDay(day);
     if (day > 90) {
       setIsRecoveryMode(true);
@@ -58,6 +65,10 @@ export const PandemicView: React.FC = () => {
   };
 
   const handleToggleRecoveryMode = (recovery: boolean) => {
+    if (recovery && !isBusinessSubscribed) {
+      openPaymentModal();
+      return;
+    }
     setIsRecoveryMode(recovery);
     if (recovery && currentDay < 90) {
       setCurrentDay(120);
@@ -80,6 +91,17 @@ export const PandemicView: React.FC = () => {
               {selectedCity.name} {selectedCity.flag}
             </span>
             <AIConfidenceMeter score={96.8} label="Simulation Precision" variant="badge" />
+            
+            {/* Subscription Pill */}
+            {isBusinessSubscribed ? (
+              <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-xs flex items-center gap-1">
+                ⭐ BUSINESS SUBSCRIBED
+              </span>
+            ) : (
+              <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                Free Tier
+              </span>
+            )}
           </div>
 
           <p className="text-xs sm:text-sm text-slate-600 font-medium mt-1">
@@ -88,44 +110,61 @@ export const PandemicView: React.FC = () => {
 
           {/* Scenario Indicators */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-3 pt-3 border-t border-slate-100 text-xs font-semibold text-slate-500">
-            <span className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200 text-slate-700">
-              <span className="font-bold text-slate-900">Scenario:</span> Global Pandemic
+            <span className="flex items-center gap-1 text-slate-700">
+              <Calendar className="w-3.5 h-3.5 text-blue-600" />
+              Duration: <b>90 Days Outbreak</b>
             </span>
-            <span className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200 text-slate-700">
-              <span className="font-bold text-slate-900">Duration:</span> 90 Days (Recovery to 365d)
+            <span className="text-slate-300">•</span>
+            <span className="flex items-center gap-1 text-slate-700">
+              <Activity className="w-3.5 h-3.5 text-rose-600" />
+              Scale: <b>Severe Contagion</b>
             </span>
-            <span className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200 text-slate-700">
-              <span className="font-bold text-slate-900">Mode:</span> {isRecoveryMode ? 'Recovery Mode' : 'Simulation'}
+            <span className="text-slate-300">•</span>
+            <span className="flex items-center gap-1 text-slate-700">
+              <Globe className="w-3.5 h-3.5 text-purple-600" />
+              Interventions: <b>Dynamic Policies</b>
             </span>
           </div>
         </div>
 
-        {/* Action Button to Pricing / Plans */}
-        <div className="flex items-center gap-2.5 shrink-0 self-start md:self-auto">
-          <button
-            onClick={() => setActiveTab('pricing')}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md shadow-blue-500/20 transition transform hover:scale-[1.02] cursor-pointer"
-          >
-            <span>View Plans & Licensing</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+        {/* Action Button: Pricing / Subscription Status */}
+        <div className="shrink-0 flex items-center gap-2">
+          {!isBusinessSubscribed ? (
+            <button
+              onClick={openPaymentModal}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-xs shadow-md shadow-blue-500/20 transition transform hover:scale-[1.02] cursor-pointer"
+            >
+              <Zap className="w-3.5 h-3.5 fill-white" />
+              <span>Unlock Business Mode ($499/mo)</span>
+            </button>
+          ) : (
+            <div className="px-4 py-2 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-extrabold flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>Full Analytics Unlocked</span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* PROMINENT MANDATORY DISCLAIMER BOX */}
-      <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-300 text-amber-950 text-xs flex items-center gap-2.5">
-        <Info className="w-4 h-4 text-amber-700 shrink-0" />
-        <span className="font-bold">
-          All figures are simulated estimates for scenario planning and are not real-world forecasts.
-        </span>
-      </div>
-
-      {/* 2. PANDEMIC EMERGENCY MAP (HOSPITALS, DISPENSARIES, TESTING BOOTHS, OXYGEN, QUARANTINE ZONES) */}
+      {/* 2. TOP PANDEMIC GIS INFRASTRUCTURE & ESSENTIAL SERVICES MAP */}
       <PandemicMap />
 
-      {/* 3. DEDICATED RECOVERY MODE BANNER (When Day > 90 or Recovery Mode Active) */}
-      {isRecoveryMode ? (
-        <div className="card-clean p-6 sm:p-7 rounded-3xl bg-gradient-to-r from-emerald-50 via-teal-50 to-blue-50 border-2 border-emerald-300 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-5 animate-in fade-in-50">
+      {/* 3. EXPLICIT DISCLAIMER */}
+      <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-50/90 border border-amber-300 text-amber-950 flex items-start gap-3 shadow-xs">
+        <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+        <div className="text-xs space-y-0.5">
+          <span className="font-extrabold text-amber-900 uppercase tracking-wider block text-[10px]">
+            Hypothetical Simulation Model
+          </span>
+          <p className="text-amber-900/90 leading-relaxed font-medium">
+            This module illustrates hypothetical disruption scenarios for urban resilience training, emergency preparedness, and impact analysis.
+          </p>
+        </div>
+      </div>
+
+      {/* 4. RECOVERY MODE BANNER OR TEASER */}
+      {isRecoveryMode && isBusinessSubscribed ? (
+        <div className="card-clean p-6 sm:p-7 rounded-3xl bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border-2 border-emerald-400 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="text-xs font-black uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
@@ -159,19 +198,24 @@ export const PandemicView: React.FC = () => {
         <div className="p-4 rounded-2xl bg-slate-100/90 border border-slate-200 flex items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 text-slate-700 font-bold">
             <span className="text-base">🌅</span>
-            <span>Looking for post-pandemic urban rebound?</span>
+            <span>Looking for post-pandemic urban rebound (Day 90–365)?</span>
+            {!isBusinessSubscribed && (
+              <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
+                <Lock className="w-2.5 h-2.5" /> Business Feature
+              </span>
+            )}
           </div>
           <button
             onClick={() => handleToggleRecoveryMode(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-xs transition cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-xs transition cursor-pointer"
           >
-            <span>Enter Recovery Mode (Day 90–365)</span>
+            <span>Enter Recovery Mode</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
 
-      {/* 4. LARGE AVERAGE IMPACT SCORE BANNER */}
+      {/* 5. LARGE AVERAGE IMPACT SCORE BANNER */}
       <div className={`p-6 sm:p-7 rounded-3xl ${statusColors.bg} border-2 ${statusColors.border} shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-5`}>
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -188,15 +232,14 @@ export const PandemicView: React.FC = () => {
             AVERAGE IMPACT SCORE
           </h2>
           <p className="text-xs text-slate-600 max-w-xl leading-relaxed">
-            Representing the arithmetic mean of 7 key sectors (Healthcare, Economy, Transportation, Workforce, Supply Chain, Society, and Environment).
+            Composite severity index calculated across Healthcare, Economy, Transportation, Workforce, Supply Chain, Society, and Environment.
           </p>
         </div>
 
-        {/* Big Score Display */}
-        <div className="flex items-center gap-4 bg-white/90 backdrop-blur-md p-4 px-6 rounded-3xl border-2 border-slate-200 shadow-sm shrink-0 self-start md:self-auto">
-          <div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-4xl sm:text-5xl font-black font-mono text-slate-900 tracking-tight">
+        <div className="flex items-center gap-4 bg-white/90 backdrop-blur-sm p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+          <div className="text-right">
+            <div className="flex items-baseline justify-end gap-1">
+              <span className={`text-3xl sm:text-4xl font-black font-mono tracking-tight ${statusColors.text}`}>
                 {averageImpactScore}
               </span>
               <span className="text-sm font-bold text-slate-400">/ 100</span>
@@ -217,15 +260,17 @@ export const PandemicView: React.FC = () => {
         </div>
       </div>
 
-      {/* 5. PANDEMIC TIMELINE CONTROLLER */}
+      {/* 6. PANDEMIC TIMELINE CONTROLLER */}
       <PandemicTimelineController
         currentDay={currentDay}
         onDayChange={handleDayChange}
         isRecoveryMode={isRecoveryMode}
         onToggleRecoveryMode={handleToggleRecoveryMode}
+        isBusinessSubscribed={isBusinessSubscribed}
+        onPromptUpgrade={openPaymentModal}
       />
 
-      {/* 4. EXACTLY EIGHT SECTOR IMPACT CARDS (4 x 2 DESKTOP GRID) */}
+      {/* 7. EXACTLY EIGHT SECTOR IMPACT CARDS (4 x 2 DESKTOP GRID) */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -272,7 +317,7 @@ export const PandemicView: React.FC = () => {
         </div>
       </div>
 
-      {/* 5. WHAT IF? SCENARIOS SECTION */}
+      {/* 8. WHAT IF? SCENARIOS SECTION */}
       <PandemicWhatIfController
         currentDay={currentDay}
         params={whatIfParams}
@@ -281,10 +326,12 @@ export const PandemicView: React.FC = () => {
         simulationResult={simulationResult}
       />
 
-      {/* 6. RECOVERY MODE & IMPACT OVER TIME CHART */}
+      {/* 9. RECOVERY MODE & IMPACT OVER TIME CHART */}
       <RecoveryVisualisationChart
         currentDay={currentDay}
         params={whatIfParams}
+        isLocked={!isBusinessSubscribed}
+        onUnlock={openPaymentModal}
       />
 
     </div>

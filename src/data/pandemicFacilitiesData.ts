@@ -113,6 +113,45 @@ export const PANDEMIC_FACILITIES_DATABASE: Record<string, PandemicFacility[]> = 
       statusText: 'Operational 24/7 • 12,000L Liquid Oxygen Tank',
       contactNumber: '+91 175 2991000',
       oxygenStockCylinders: 950
+    },
+    {
+      id: 'PTA-GROC-01',
+      name: 'Reliance Smart Superstore & Essential Ration Hub',
+      type: 'grocery_store',
+      coordinates: [30.3440, 76.3840],
+      address: 'Leela Bhawan Main Complex, Patiala',
+      isOpen: true,
+      statusText: 'Open 07:00 - 19:00 • Sanitized Token Entry',
+      contactNumber: '+91 175 2289001',
+      essentialStockPct: 94,
+      homeDeliveryAvailable: true,
+      tokenSystemActive: true
+    },
+    {
+      id: 'PTA-GROC-02',
+      name: 'Verka Dairy & Essential Provision Depot',
+      type: 'grocery_store',
+      coordinates: [30.3520, 76.3750],
+      address: 'Model Town Market, Patiala',
+      isOpen: true,
+      statusText: 'Open 06:00 - 20:00 • Daily Milk & Ration Distribution',
+      contactNumber: '+91 175 2301144',
+      essentialStockPct: 88,
+      homeDeliveryAvailable: true,
+      tokenSystemActive: false
+    },
+    {
+      id: 'PTA-GROC-03',
+      name: 'Modern Bazaar Essential Provisions Centre',
+      type: 'grocery_store',
+      coordinates: [30.3310, 76.3950],
+      address: 'Near Fountain Chowk, Patiala',
+      isOpen: true,
+      statusText: 'Open 08:00 - 18:00 • Home Delivery Priority',
+      contactNumber: '+91 175 2215588',
+      essentialStockPct: 91,
+      homeDeliveryAvailable: true,
+      tokenSystemActive: true
     }
   ],
 
@@ -205,6 +244,32 @@ export const PANDEMIC_FACILITIES_DATABASE: Record<string, PandemicFacility[]> = 
       statusText: 'Operational 24/7 • 25,000L Cryogenic Reserve',
       contactNumber: '+91 172 2650099',
       oxygenStockCylinders: 2200
+    },
+    {
+      id: 'CHD-GROC-01',
+      name: 'Sector 26 Wholesale Food Grain & Essential Ration Mart',
+      type: 'grocery_store',
+      coordinates: [30.7280, 76.7960],
+      address: 'Sector 26 Grain Market, Chandigarh',
+      isOpen: true,
+      statusText: 'Open 06:00 - 18:00 • Wholesale Bulk Distribution',
+      contactNumber: '+91 172 2791200',
+      essentialStockPct: 96,
+      homeDeliveryAvailable: true,
+      tokenSystemActive: true
+    },
+    {
+      id: 'CHD-GROC-02',
+      name: 'Reliance Fresh Superstore Sector 35',
+      type: 'grocery_store',
+      coordinates: [30.7240, 76.7660],
+      address: 'Sector 35-C Inner Market, Chandigarh',
+      isOpen: true,
+      statusText: 'Open 08:00 - 20:00 • Sanitized Direct Delivery',
+      contactNumber: '+91 172 2608890',
+      essentialStockPct: 91,
+      homeDeliveryAvailable: true,
+      tokenSystemActive: false
     }
   ]
 };
@@ -538,6 +603,18 @@ export function getPandemicFacilitiesForCity(cityId: string, cityLat: number, ci
       isOpen: true,
       statusText: 'Operational 24/7 • Cryogenic Liquid Reserve',
       oxygenStockCylinders: 1500
+    },
+    {
+      id: `${cityId}-GROC-01`,
+      name: `${cityName} Central Essential Foods & Grocery Distribution Mart`,
+      type: 'grocery_store',
+      coordinates: [cityLat + 0.008, cityLng - 0.009],
+      address: `Civic Market Plaza, ${cityName}`,
+      isOpen: true,
+      statusText: 'Open 07:00 - 19:00 • Sanitized Token Entry Active',
+      essentialStockPct: 92,
+      homeDeliveryAvailable: true,
+      tokenSystemActive: true
     }
   ];
 }

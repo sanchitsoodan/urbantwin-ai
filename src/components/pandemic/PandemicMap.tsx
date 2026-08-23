@@ -57,6 +57,9 @@ const createFacilityIcon = (type: PandemicFacilityType, isOpen: boolean) => {
   } else if (type === 'oxygen_depot') {
     bgClass = 'bg-blue-600 border-white text-white shadow-blue-500/50';
     iconSvg = '🚚';
+  } else if (type === 'grocery_store') {
+    bgClass = 'bg-emerald-600 border-white text-white shadow-emerald-500/50';
+    iconSvg = '🛒';
   }
 
   const html = `
@@ -109,6 +112,7 @@ export const PandemicMap: React.FC = () => {
   const [showHospitals, setShowHospitals] = useState(true);
   const [showDispensaries, setShowDispensaries] = useState(true);
   const [showTesting, setShowTesting] = useState(true);
+  const [showGroceries, setShowGroceries] = useState(true);
   const [showRedZones, setShowRedZones] = useState(true);
   const [showAmberZones, setShowAmberZones] = useState(true);
   const [showRoadRestrictions, setShowRoadRestrictions] = useState(true);
@@ -138,6 +142,7 @@ export const PandemicMap: React.FC = () => {
     if (f.type === 'hospital') return showHospitals;
     if (f.type === 'dispensary') return showDispensaries;
     if (f.type === 'testing_booth') return showTesting;
+    if (f.type === 'grocery_store') return showGroceries;
     return true;
   });
 
@@ -163,7 +168,7 @@ export const PandemicMap: React.FC = () => {
               </span>
             </div>
             <h3 className="text-sm font-extrabold text-slate-900 mt-0.5">
-              Hospitals, Dispensaries, Red/Yellow Affected Zones & Roadblocks
+              Hospitals, Dispensaries, Grocery Stores, Red/Yellow Affected Zones & Roadblocks
             </h3>
           </div>
         </div>
@@ -188,6 +193,16 @@ export const PandemicMap: React.FC = () => {
           >
             <span>💊</span>
             <span>Dispensaries</span>
+          </button>
+
+          <button
+            onClick={() => setShowGroceries(!showGroceries)}
+            className={`px-2.5 py-1 rounded-xl border transition cursor-pointer flex items-center gap-1.5 text-[11px] ${
+              showGroceries ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-slate-100 border-slate-200 text-slate-400'
+            }`}
+          >
+            <span>🛒</span>
+            <span>Groceries</span>
           </button>
 
           <button
@@ -451,6 +466,24 @@ export const PandemicMap: React.FC = () => {
                     <div className="bg-purple-50 p-1.5 rounded-lg text-[10px] text-purple-800">
                       <span className="block font-bold">RT-PCR Capacity: {f.dailyTestingCapacity}/day</span>
                       <span>Wait Time: ~{f.currentWaitTimeMin} mins</span>
+                    </div>
+                  )}
+
+                  {f.type === 'grocery_store' && (
+                    <div className="bg-emerald-50 p-2 rounded-lg text-[10px] text-emerald-950 space-y-1 border border-emerald-200">
+                      <div className="flex justify-between font-bold">
+                        <span>Essential Food Stock:</span>
+                        <span className="font-mono font-black text-emerald-700">{f.essentialStockPct}% Stocked</span>
+                      </div>
+                      <div className="flex justify-between text-slate-700">
+                        <span>Home Delivery Service:</span>
+                        <span className="font-bold text-emerald-800">{f.homeDeliveryAvailable ? '✅ Active (Within 5km)' : '❌ In-Store Only'}</span>
+                      </div>
+                      {f.tokenSystemActive && (
+                        <div className="text-[9px] text-emerald-900 bg-emerald-100 px-1.5 py-0.5 rounded font-bold">
+                          🎟️ Socially-Distanced Token Queue Active
+                        </div>
+                      )}
                     </div>
                   )}
 

@@ -16,7 +16,8 @@ import {
   User,
   Navigation2,
   Plus,
-  Globe
+  Globe,
+  Zap
 } from 'lucide-react';
 import { useCity } from '../../context/CityContext';
 import { useAuth } from '../../context/AuthContext';
@@ -37,7 +38,15 @@ export const Header: React.FC<HeaderProps> = () => {
     setIsChatbotOpen
   } = useCity();
 
-  const { currentUser, logout, openAuthModal, allUsers, isAdmin } = useAuth();
+  const { 
+    currentUser, 
+    logout, 
+    openAuthModal, 
+    allUsers, 
+    isAdmin,
+    isBusinessSubscribed,
+    openPaymentModal
+  } = useAuth();
   
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
@@ -243,7 +252,29 @@ export const Header: React.FC<HeaderProps> = () => {
                     </div>
                   </div>
 
-                  <div className="pt-2 space-y-1">
+                  <div className="pt-2 space-y-1.5">
+                    {/* Subscription Status Pill */}
+                    {isBusinessSubscribed ? (
+                      <div className="p-2 rounded-xl bg-gradient-to-r from-amber-50 to-amber-100/70 border border-amber-300 text-[11px] font-extrabold text-amber-950 flex items-center justify-between">
+                        <span className="flex items-center gap-1">⭐ Business Plan</span>
+                        <span className="text-[9px] text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded font-mono font-black">ACTIVE</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          openPaymentModal();
+                          setUserDropdownOpen(false);
+                        }}
+                        className="w-full flex items-center justify-between p-2 rounded-xl text-xs font-extrabold bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-blue-900 border border-blue-200 transition cursor-pointer"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <Zap className="w-3.5 h-3.5 text-blue-600 fill-blue-600" />
+                          <span>Get Business Plan</span>
+                        </span>
+                        <span className="text-[10px] font-mono font-bold">$499/mo</span>
+                      </button>
+                    )}
+
                     {/* Database option only visible to Admins */}
                     {isAdmin && (
                       <button

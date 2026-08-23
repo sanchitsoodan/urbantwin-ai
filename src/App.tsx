@@ -8,6 +8,8 @@ import { AISolutionsModal } from './components/dashboard/AISolutionsModal';
 import { CityChatbotModal } from './components/chat/CityChatbotModal';
 import { AuthModal } from './components/auth/AuthModal';
 import { LocationPickerModal } from './components/location/LocationPickerModal';
+import { PaymentCheckoutModal } from './components/pricing/PaymentCheckoutModal';
+import { useAuth } from './context/AuthContext';
 
 import { CommandCenterView } from './components/views/CommandCenterView';
 import { PandemicView } from './components/views/PandemicView';
@@ -18,6 +20,7 @@ import { ArchitectureView } from './components/views/ArchitectureView';
 
 const MainContent: React.FC = () => {
   const { activeTab, selectedCity } = useCity();
+  const { isPaymentModalOpen, closePaymentModal, activateBusinessSubscription } = useAuth();
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans antialiased selection:bg-blue-600 selection:text-white">
@@ -52,6 +55,13 @@ const MainContent: React.FC = () => {
 
       {/* AI Proposed Action Plan & Solutions Implementer Modal */}
       <AISolutionsModal />
+
+      {/* Global Secure Payment Gateway Modal */}
+      <PaymentCheckoutModal 
+        isOpen={isPaymentModalOpen}
+        onClose={closePaymentModal}
+        onSuccess={activateBusinessSubscription}
+      />
 
       {/* Clean Footer */}
       <footer className="mt-auto border-t border-slate-200 bg-white px-4 lg:px-6 py-3 text-xs text-slate-500">

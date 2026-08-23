@@ -55,7 +55,7 @@ export interface PandemicTimelinePoint {
   environment: number;
 }
 
-export type PandemicFacilityType = 'hospital' | 'dispensary' | 'testing_booth' | 'oxygen_depot' | 'containment_zone';
+export type PandemicFacilityType = 'hospital' | 'dispensary' | 'testing_booth' | 'oxygen_depot' | 'containment_zone' | 'grocery_store';
 
 export interface PandemicFacility {
   id: string;
@@ -75,6 +75,9 @@ export interface PandemicFacility {
   currentWaitTimeMin?: number;
   oxygenStockCylinders?: number;
   quarantineRadiusMeters?: number;
+  essentialStockPct?: number;
+  homeDeliveryAvailable?: boolean;
+  tokenSystemActive?: boolean;
 }
 
 export interface PandemicAffectedZone {

@@ -10,32 +10,22 @@ import {
   Zap,
   Globe,
   Lock,
-  Star
+  Star,
+  CheckCircle2
 } from 'lucide-react';
 import { useCity } from '../../context/CityContext';
-import { PaymentCheckoutModal } from '../pricing/PaymentCheckoutModal';
+import { useAuth } from '../../context/AuthContext';
 import { EnterpriseQuoteModal } from '../pricing/EnterpriseQuoteModal';
 
 export const PricingView: React.FC = () => {
   const { setActiveTab } = useCity();
-
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const { isBusinessSubscribed, openPaymentModal } = useAuth();
   const [isEnterpriseOpen, setIsEnterpriseOpen] = useState(false);
-  const [hasBusinessAccess, setHasBusinessAccess] = useState(false);
 
   return (
     <div className="max-w-[1920px] mx-auto px-4 lg:px-6 space-y-8 pb-16">
       
-      {/* Modals */}
-      <PaymentCheckoutModal
-        isOpen={isCheckoutOpen}
-        onClose={() => setIsCheckoutOpen(false)}
-        onSuccess={() => {
-          setHasBusinessAccess(true);
-          setActiveTab('pandemic');
-        }}
-      />
-
+      {/* Enterprise Quote Request Modal */}
       <EnterpriseQuoteModal
         isOpen={isEnterpriseOpen}
         onClose={() => setIsEnterpriseOpen(false)}
@@ -55,6 +45,13 @@ export const PricingView: React.FC = () => {
         <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed max-w-xl mx-auto">
           Scale from single-city pandemic scenario exploration to national sovereign digital twins and multi-departmental emergency response networks.
         </p>
+
+        {isBusinessSubscribed && (
+          <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-900 inline-flex items-center gap-2 text-xs font-bold mt-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>You have an active Business Plan subscription. All premium features are unlocked!</span>
+          </div>
+        )}
       </div>
 
       {/* 3 Clean Pricing Tiers Grid */}
@@ -71,7 +68,7 @@ export const PricingView: React.FC = () => {
                 FREE
               </h3>
               <p className="text-xs text-slate-500 font-medium mt-1">
-                For individuals and exploration.
+                For individuals and basic city exploration.
               </p>
             </div>
 
@@ -88,11 +85,11 @@ export const PricingView: React.FC = () => {
               <ul className="space-y-2 text-xs text-slate-600 font-medium">
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Basic Pandemic simulation</span>
+                  <span>Basic Pandemic 90-day simulation</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Basic timeline</span>
+                  <span>Standard timeline milestones</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -100,7 +97,11 @@ export const PricingView: React.FC = () => {
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Basic impact score</span>
+                  <span>8 Sector impact cards</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Interactive Pandemic GIS map</span>
                 </li>
               </ul>
             </div>
@@ -130,7 +131,7 @@ export const PricingView: React.FC = () => {
                 BUSINESS
               </h3>
               <p className="text-xs text-slate-500 font-medium mt-1">
-                For businesses and organisations.
+                For businesses, municipal planners & analysts.
               </p>
             </div>
 
@@ -142,39 +143,43 @@ export const PricingView: React.FC = () => {
             {/* Feature List */}
             <div className="space-y-2.5 pt-2">
               <span className="text-xs font-bold text-slate-900 uppercase tracking-wider block">
-                Includes:
+                Includes everything in Free, plus:
               </span>
               <ul className="space-y-2 text-xs text-slate-700 font-medium">
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-blue-600 shrink-0 font-bold" />
-                  <span className="font-semibold">Advanced scenario simulation</span>
+                  <span className="font-semibold">🌟 Post-Pandemic Recovery Mode (Day 90–365)</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-blue-600 shrink-0 font-bold" />
-                  <span className="font-semibold">Extended scenario controls</span>
+                  <span className="font-semibold">🌟 365-Day Trajectory Resilience Analytics</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-blue-600 shrink-0 font-bold" />
-                  <span className="font-semibold">Business-focused impact analysis</span>
+                  <span className="font-semibold">Extended multi-policy What-If controls</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-blue-600 shrink-0 font-bold" />
-                  <span>Simulation history</span>
+                  <span className="font-semibold">Automated PDF report exports</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-blue-600 shrink-0 font-bold" />
-                  <span>Increased usage limits</span>
+                  <span>Historical scenario comparative engine</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-blue-600 shrink-0 font-bold" />
+                  <span>Unlimited simulation runs & telemetry sync</span>
                 </li>
               </ul>
             </div>
           </div>
 
           <button
-            onClick={() => setIsCheckoutOpen(true)}
+            onClick={openPaymentModal}
             className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-lg shadow-blue-500/25 transition transform hover:scale-[1.02] cursor-pointer mt-6 flex items-center justify-center gap-2"
           >
             <Zap className="w-4 h-4 fill-white" />
-            <span>{hasBusinessAccess ? 'MANAGE SUBSCRIPTION' : 'GET BUSINESS'}</span>
+            <span>{isBusinessSubscribed ? 'MANAGE SUBSCRIPTION' : 'GET BUSINESS ($499/mo)'}</span>
           </button>
         </div>
 
@@ -182,50 +187,47 @@ export const PricingView: React.FC = () => {
         <div className="card-clean p-6 sm:p-7 rounded-3xl bg-white border-2 border-slate-200 shadow-sm flex flex-col justify-between hover:border-slate-300 transition">
           <div className="space-y-4">
             <div>
-              <span className="text-xs font-extrabold text-indigo-700 uppercase tracking-wider">
-                Public Sector & Sovereign Tier
+              <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+                Public Sector & Sovereign
               </span>
               <h3 className="text-xl font-black text-slate-900 mt-1">
-                ENTERPRISE & GOVERNMENT
+                ENTERPRISE & GOVT
               </h3>
               <p className="text-xs text-slate-500 font-medium mt-1">
-                For large organisations, enterprises and government bodies.
+                For governments, municipalities and large networks.
               </p>
             </div>
 
             <div className="flex items-baseline gap-1 pt-2 border-t border-slate-100">
-              <span className="text-2xl font-black text-slate-900">Custom Licensing</span>
+              <span className="text-3xl font-black font-mono text-slate-900">Custom</span>
+              <span className="text-xs text-slate-500 font-semibold">/ annual contract</span>
             </div>
 
             {/* Feature List */}
             <div className="space-y-2.5 pt-2">
               <span className="text-xs font-bold text-slate-900 uppercase tracking-wider block">
-                Includes:
+                Includes everything in Business, plus:
               </span>
               <ul className="space-y-2 text-xs text-slate-600 font-medium">
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-indigo-600 shrink-0" />
-                  <span>Custom deployment</span>
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Custom pandemic modeling</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-indigo-600 shrink-0" />
-                  <span>Custom simulations</span>
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Live city sensor integration</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-indigo-600 shrink-0" />
-                  <span>Data integrations</span>
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Multi-city / national deployment</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-indigo-600 shrink-0" />
-                  <span>Organisation-specific models</span>
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Dedicated support & custom integrations</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-indigo-600 shrink-0" />
-                  <span>Licensing</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-indigo-600 shrink-0" />
-                  <span>Support</span>
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Sovereign on-premise air-gapped deployment</span>
                 </li>
               </ul>
             </div>
@@ -233,36 +235,13 @@ export const PricingView: React.FC = () => {
 
           <button
             onClick={() => setIsEnterpriseOpen(true)}
-            className="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs transition cursor-pointer mt-6"
+            className="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs shadow-md transition cursor-pointer mt-6 flex items-center justify-center gap-1.5"
           >
-            CONTACT US
+            <Send className="w-3.5 h-3.5" />
+            <span>CONTACT US</span>
           </button>
         </div>
 
-      </div>
-
-      {/* Commercialisation Highlights */}
-      <div className="card-clean p-6 rounded-3xl bg-slate-50 border border-slate-200 max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-2xl bg-white border border-slate-200 text-blue-600 shrink-0">
-            <ShieldCheck className="w-6 h-6" />
-          </div>
-          <div>
-            <h4 className="text-sm font-extrabold text-slate-900">
-              Sovereign B2B & B2G Digital Twin Architecture
-            </h4>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Secure on-premises or cloud deployments complying with public sector governance frameworks.
-            </p>
-          </div>
-        </div>
-
-        <button
-          onClick={() => setIsEnterpriseOpen(true)}
-          className="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-xs border border-slate-300 transition shrink-0 cursor-pointer"
-        >
-          Request Specification Sheet
-        </button>
       </div>
 
     </div>
