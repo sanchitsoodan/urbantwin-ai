@@ -15,7 +15,7 @@ import {
 import { useCity } from '../../context/CityContext';
 import { LayerId } from '../../types/city';
 
-export type MapTileStyle = 'positron' | 'voyager' | 'satellite' | 'osm';
+export type MapTileStyle = 'positron' | 'voyager' | 'satellite';
 
 export const MAP_TILE_PROVIDERS: Record<MapTileStyle, { name: string; url: string; attribution: string; icon: string }> = {
   positron: {
@@ -35,12 +35,6 @@ export const MAP_TILE_PROVIDERS: Record<MapTileStyle, { name: string; url: strin
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     attribution: '&copy; Esri &mdash; Earthstar Geographics',
     icon: '🛰️'
-  },
-  osm: {
-    name: 'OpenStreetMap',
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; OpenStreetMap contributors',
-    icon: '🌍'
   }
 };
 

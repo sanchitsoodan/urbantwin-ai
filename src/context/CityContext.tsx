@@ -113,8 +113,8 @@ interface CityContextType {
   implementSolutionPlan: () => void;
 
   // Map Style & API Provider
-  mapTileStyle: 'positron' | 'voyager' | 'satellite' | 'osm';
-  setMapTileStyle: (style: 'positron' | 'voyager' | 'satellite' | 'osm') => void;
+  mapTileStyle: 'positron' | 'voyager' | 'satellite';
+  setMapTileStyle: (style: 'positron' | 'voyager' | 'satellite') => void;
 
   // UrbanTwin AI Chatbot Copilot
   isChatbotOpen: boolean;
@@ -183,7 +183,7 @@ export const CityProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [implementedSolutions, setImplementedSolutions] = useState(false);
 
   // Map Style State
-  const [mapTileStyle, setMapTileStyle] = useState<'positron' | 'voyager' | 'satellite' | 'osm'>('positron');
+  const [mapTileStyle, setMapTileStyle] = useState<'positron' | 'voyager' | 'satellite'>('positron');
 
   // UrbanTwin AI Copilot Chatbot State
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
