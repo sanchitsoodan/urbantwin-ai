@@ -77,6 +77,27 @@ export interface PandemicFacility {
   quarantineRadiusMeters?: number;
 }
 
+export interface PandemicAffectedZone {
+  id: string;
+  name: string;
+  severity: 'red' | 'amber';
+  coordinates: [number, number];
+  radiusMeters: number;
+  positivityRatePct: number;
+  activeCases: number;
+  statusText: string;
+  restrictionsDescription: string;
+}
+
+export interface PandemicRoadRestriction {
+  id: string;
+  name: string;
+  coordinates: [number, number][];
+  severity: 'closed' | 'screened_entry';
+  statusText: string;
+  reason: string;
+}
+
 export interface EnterpriseQuoteRequest {
   id: string;
   name: string;

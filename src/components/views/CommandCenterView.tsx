@@ -30,38 +30,38 @@ export const CommandCenterView: React.FC = () => {
     <div className="max-w-[1920px] mx-auto px-4 lg:px-6 space-y-4 pb-12">
       
       {/* Friendly Guide & Quick Actions Bar */}
-      <div className="card-clean p-4 rounded-3xl bg-white border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div className="card-clean p-3 sm:p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-2.5">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-sm font-bold text-slate-900">
+            <h2 className="text-xs sm:text-sm font-bold text-slate-900">
               {selectedCity.name} Operations Cockpit
             </h2>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
               {selectedCity.country} {selectedCity.flag}
             </span>
-            <AIConfidenceMeter score={96.4} label="Real-Time Telemetry Precision" variant="badge" />
+            <AIConfidenceMeter score={96.4} label="Real-Time Precision" variant="badge" />
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            {selectedCity.tagline} • Click markers to view real-time status or place custom events on the map.
+          <p className="text-[11px] text-slate-500 mt-0.5 truncate">
+            {selectedCity.tagline} • Click markers to view status or place custom events on the map.
           </p>
         </div>
 
         {/* Quick 1-Click Action Buttons */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={() => startAnimatedDispatch()}
             disabled={isDispatching || activeIncidentsList.length === 0}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold transition text-xs shadow-md cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold transition text-xs shadow-xs cursor-pointer"
           >
-            <Play className={`w-3.5 h-3.5 fill-white ${isDispatching ? 'animate-spin' : ''}`} />
+            <Play className={`w-3 h-3 fill-white ${isDispatching ? 'animate-spin' : ''}`} />
             <span>{isDispatching ? 'Unit Driving...' : '🚨 Run Live Dispatch'}</span>
           </button>
 
           <button
             onClick={() => setIsSolutionModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold transition text-xs border border-emerald-200 cursor-pointer"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold transition text-xs border border-emerald-200 cursor-pointer"
           >
-            <Sparkles className="w-4 h-4 text-emerald-600" />
+            <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
             <span>AI Solutions Plan</span>
           </button>
         </div>

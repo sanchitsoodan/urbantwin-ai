@@ -5,6 +5,7 @@ import {
   Marker, 
   Popup, 
   Circle,
+  Polyline,
   useMap 
 } from 'react-leaflet';
 import L from 'leaflet';
@@ -21,14 +22,25 @@ import {
   Layers,
   Sparkles,
   Info,
-  Maximize2
+  Maximize2,
+  Ban,
+  AlertTriangle
 } from 'lucide-react';
 import { useCity } from '../../context/CityContext';
-import { PandemicFacility, PandemicFacilityType } from '../../types/pandemic';
-import { getPandemicFacilitiesForCity } from '../../data/pandemicFacilitiesData';
+import { 
+  PandemicFacility, 
+  PandemicFacilityType, 
+  PandemicAffectedZone, 
+  PandemicRoadRestriction 
+} from '../../types/pandemic';
+import { 
+  getPandemicFacilitiesForCity, 
+  getPandemicZonesForCity, 
+  getPandemicRoadRestrictionsForCity 
+} from '../../data/pandemicFacilitiesData';
 import { AIConfidenceMeter } from '../common/AIConfidenceMeter';
 
-// Custom DivIcons for Pandemic Map Markers
+// Custom DivIcons for Pandemic Map Facilities
 const createFacilityIcon = (type: PandemicFacilityType, isOpen: boolean) => {
   let bgClass = 'bg-rose-600 border-white text-white shadow-rose-500/40';
   let iconSvg = '🏥';
@@ -49,7 +61,7 @@ const createFacilityIcon = (type: PandemicFacilityType, isOpen: boolean) => {
 
   const html = `
     <div class="relative flex items-center justify-center">
-      <div class="w-9 h-9 rounded-2xl ${bgClass} border-2 shadow-lg flex items-center justify-center text-base transform hover:scale-110 transition cursor-pointer">
+      <div class="w-8 h-8 rounded-2xl ${bgClass} border-2 shadow-md flex items-center justify-center text-sm transform hover:scale-110 transition cursor-pointer">
         <span>${iconSvg}</span>
       </div>
       <div class="absolute -bottom-1 w-2 h-2 rounded-full ${isOpen ? 'bg-emerald-400 ring-2 ring-white' : 'bg-red-500 ring-2 ring-white'}"></div>
@@ -59,9 +71,26 @@ const createFacilityIcon = (type: PandemicFacilityType, isOpen: boolean) => {
   return L.divIcon({
     html,
     className: '',
-    iconSize: [36, 36],
-    iconAnchor: [18, 18],
-    popupAnchor: [0, -20]
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -18]
+  });
+};
+
+// Roadblock Barrier Icon
+const createRoadblockIcon = (severity: 'closed' | 'screened_entry') => {
+  const isClosed = severity === 'closed';
+  const html = `
+    <div class="px-2 py-1 rounded-xl ${isClosed ? 'bg-red-700 text-white' : 'bg-amber-500 text-slate-950'} font-extrabold text-[10px] shadow-lg border border-white flex items-center gap-1 cursor-pointer transform hover:scale-110 transition">
+      <span>${isClosed ? '⛔' : '⚠️'}</span>
+      <span class="truncate">${isClosed ? 'ROAD CLOSED' : 'CHECKPOINT'}</span>
+    </div>
+  `;
+  return L.divIcon({
+    html,
+    className: '',
+    iconSize: [95, 24],
+    iconAnchor: [47, 12]
   });
 };
 
@@ -80,12 +109,25 @@ export const PandemicMap: React.FC = () => {
   const [showHospitals, setShowHospitals] = useState(true);
   const [showDispensaries, setShowDispensaries] = useState(true);
   const [showTesting, setShowTesting] = useState(true);
-  const [showOxygen, setShowOxygen] = useState(true);
-  const [showContainment, setShowContainment] = useState(true);
-  
-  const [selectedFacility, setSelectedFacility] = useState<PandemicFacility | null>(null);
+  const [showRedZones, setShowRedZones] = useState(true);
+  const [showAmberZones, setShowAmberZones] = useState(true);
+  const [showRoadRestrictions, setShowRoadRestrictions] = useState(true);
 
   const facilities = getPandemicFacilitiesForCity(
+    selectedCity.id,
+    selectedCity.coordinates[0],
+    selectedCity.coordinates[1],
+    selectedCity.name
+  );
+
+  const zones = getPandemicZonesForCity(
+    selectedCity.id,
+    selectedCity.coordinates[0],
+    selectedCity.coordinates[1],
+    selectedCity.name
+  );
+
+  const roadRestrictions = getPandemicRoadRestrictionsForCity(
     selectedCity.id,
     selectedCity.coordinates[0],
     selectedCity.coordinates[1],
@@ -96,11 +138,11 @@ export const PandemicMap: React.FC = () => {
     if (f.type === 'hospital') return showHospitals;
     if (f.type === 'dispensary') return showDispensaries;
     if (f.type === 'testing_booth') return showTesting;
-    if (f.type === 'oxygen_depot') return showOxygen;
     return true;
   });
 
-  const containmentZones = facilities.filter(f => f.type === 'containment_zone' && showContainment);
+  const redZones = zones.filter(z => z.severity === 'red' && showRedZones);
+  const amberZones = zones.filter(z => z.severity === 'amber' && showAmberZones);
 
   return (
     <div className="card-clean p-4 sm:p-5 rounded-3xl bg-white border-2 border-slate-200 shadow-sm space-y-3 relative overflow-hidden">
@@ -114,14 +156,14 @@ export const PandemicMap: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-extrabold uppercase tracking-wider text-rose-700">
-                Pandemic Emergency Infrastructure Twin
+                Pandemic Emergency GIS Twin
               </span>
               <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
                 {selectedCity.name} {selectedCity.flag}
               </span>
             </div>
             <h3 className="text-sm font-extrabold text-slate-900 mt-0.5">
-              Open Hospitals, Dispensaries, Testing Booths & Quarantine Zones
+              Hospitals, Dispensaries, Red/Yellow Affected Zones & Roadblocks
             </h3>
           </div>
         </div>
@@ -130,7 +172,7 @@ export const PandemicMap: React.FC = () => {
         <div className="flex flex-wrap items-center gap-1.5 text-xs font-bold">
           <button
             onClick={() => setShowHospitals(!showHospitals)}
-            className={`px-2.5 py-1.5 rounded-xl border transition cursor-pointer flex items-center gap-1.5 ${
+            className={`px-2.5 py-1 rounded-xl border transition cursor-pointer flex items-center gap-1.5 text-[11px] ${
               showHospitals ? 'bg-rose-50 border-rose-300 text-rose-800' : 'bg-slate-100 border-slate-200 text-slate-400'
             }`}
           >
@@ -140,7 +182,7 @@ export const PandemicMap: React.FC = () => {
 
           <button
             onClick={() => setShowDispensaries(!showDispensaries)}
-            className={`px-2.5 py-1.5 rounded-xl border transition cursor-pointer flex items-center gap-1.5 ${
+            className={`px-2.5 py-1 rounded-xl border transition cursor-pointer flex items-center gap-1.5 text-[11px] ${
               showDispensaries ? 'bg-teal-50 border-teal-300 text-teal-800' : 'bg-slate-100 border-slate-200 text-slate-400'
             }`}
           >
@@ -150,32 +192,45 @@ export const PandemicMap: React.FC = () => {
 
           <button
             onClick={() => setShowTesting(!showTesting)}
-            className={`px-2.5 py-1.5 rounded-xl border transition cursor-pointer flex items-center gap-1.5 ${
+            className={`px-2.5 py-1 rounded-xl border transition cursor-pointer flex items-center gap-1.5 text-[11px] ${
               showTesting ? 'bg-purple-50 border-purple-300 text-purple-800' : 'bg-slate-100 border-slate-200 text-slate-400'
             }`}
           >
             <span>🧪</span>
-            <span>Testing Booths</span>
+            <span>Testing</span>
           </button>
 
+          {/* 🔴 RED AFFECTED ZONES */}
           <button
-            onClick={() => setShowOxygen(!showOxygen)}
-            className={`px-2.5 py-1.5 rounded-xl border transition cursor-pointer flex items-center gap-1.5 ${
-              showOxygen ? 'bg-blue-50 border-blue-300 text-blue-800' : 'bg-slate-100 border-slate-200 text-slate-400'
+            onClick={() => setShowRedZones(!showRedZones)}
+            className={`px-2.5 py-1 rounded-xl border transition cursor-pointer flex items-center gap-1.5 text-[11px] font-extrabold ${
+              showRedZones ? 'bg-red-100 border-red-400 text-red-900 shadow-xs' : 'bg-slate-100 border-slate-200 text-slate-400'
             }`}
           >
-            <span>🚚</span>
-            <span>Oxygen Depots</span>
+            <span className="w-2 h-2 rounded-full bg-red-600 animate-ping inline-block" />
+            <span>🔴 Red Zones ({zones.filter(z => z.severity === 'red').length})</span>
           </button>
 
+          {/* 🟡 YELLOW / AMBER BUFFER ZONES */}
           <button
-            onClick={() => setShowContainment(!showContainment)}
-            className={`px-2.5 py-1.5 rounded-xl border transition cursor-pointer flex items-center gap-1.5 ${
-              showContainment ? 'bg-red-100 border-red-400 text-red-900 font-extrabold' : 'bg-slate-100 border-slate-200 text-slate-400'
+            onClick={() => setShowAmberZones(!showAmberZones)}
+            className={`px-2.5 py-1 rounded-xl border transition cursor-pointer flex items-center gap-1.5 text-[11px] font-extrabold ${
+              showAmberZones ? 'bg-amber-100 border-amber-400 text-amber-900 shadow-xs' : 'bg-slate-100 border-slate-200 text-slate-400'
             }`}
           >
-            <span>🛡️</span>
-            <span>Quarantine Zones</span>
+            <span>🟡</span>
+            <span>Yellow Zones ({zones.filter(z => z.severity === 'amber').length})</span>
+          </button>
+
+          {/* ⛔ RESTRICTED ROADS */}
+          <button
+            onClick={() => setShowRoadRestrictions(!showRoadRestrictions)}
+            className={`px-2.5 py-1 rounded-xl border transition cursor-pointer flex items-center gap-1.5 text-[11px] font-extrabold ${
+              showRoadRestrictions ? 'bg-rose-100 border-rose-400 text-rose-950 shadow-xs' : 'bg-slate-100 border-slate-200 text-slate-400'
+            }`}
+          >
+            <span>⛔</span>
+            <span>Restricted Roads</span>
           </button>
         </div>
       </div>
@@ -189,11 +244,12 @@ export const PandemicMap: React.FC = () => {
         </div>
 
         {/* Floating Legend */}
-        <div className="absolute top-3 right-3 z-[1000] bg-white/95 backdrop-blur-md px-3 py-2 rounded-2xl border border-slate-200 shadow-md text-[11px] font-bold text-slate-700 hidden sm:flex items-center gap-3">
-          <span className="flex items-center gap-1 text-rose-700">🏥 Apex Hospital</span>
-          <span className="flex items-center gap-1 text-teal-700">💊 Civil Clinic</span>
-          <span className="flex items-center gap-1 text-purple-700">🧪 RT-PCR Kiosk</span>
-          <span className="flex items-center gap-1 text-red-600">🔴 Quarantine Area</span>
+        <div className="absolute top-3 right-3 z-[1000] bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-slate-200 shadow-md text-[10px] font-bold text-slate-700 hidden sm:flex items-center gap-2.5">
+          <span className="flex items-center gap-1 text-rose-700">🏥 Hospital</span>
+          <span className="flex items-center gap-1 text-teal-700">💊 Clinic</span>
+          <span className="flex items-center gap-1 text-red-600">🔴 Red Outbreak Zone</span>
+          <span className="flex items-center gap-1 text-amber-600">🟡 Yellow Buffer</span>
+          <span className="flex items-center gap-1 text-rose-900">⛔ Roadblock</span>
         </div>
 
         <MapContainer
@@ -209,54 +265,147 @@ export const PandemicMap: React.FC = () => {
             url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           />
 
-          {/* Containment Zone Circles */}
-          {containmentZones.map(cz => (
-            <React.Fragment key={cz.id}>
+          {/* 🔴 1. RED HIGH-TRANSMISSION CONTAINMENT CIRCLES */}
+          {redZones.map(rz => (
+            <React.Fragment key={rz.id}>
               <Circle
-                center={cz.coordinates}
-                radius={cz.quarantineRadiusMeters || 400}
+                center={rz.coordinates}
+                radius={rz.radiusMeters}
                 pathOptions={{
                   color: '#dc2626',
                   fillColor: '#ef4444',
-                  fillOpacity: 0.25,
-                  weight: 2,
-                  dashArray: '5, 5'
+                  fillOpacity: 0.35,
+                  weight: 2.5,
+                  dashArray: '6, 6'
                 }}
               />
               <Marker
-                position={cz.coordinates}
+                position={rz.coordinates}
                 icon={L.divIcon({
                   html: `
-                    <div class="px-2 py-1 rounded-xl bg-red-600 text-white font-extrabold text-[10px] shadow-lg border border-white whitespace-nowrap flex items-center gap-1 animate-pulse">
-                      <span>🛡️ Containment Zone</span>
+                    <div class="px-2 py-0.5 rounded-lg bg-red-600 text-white font-extrabold text-[9px] shadow-lg border border-white whitespace-nowrap flex items-center gap-1 animate-pulse">
+                      <span>🔴 Red Zone: ${rz.positivityRatePct}% Positivity</span>
                     </div>
                   `,
                   className: '',
-                  iconAnchor: [60, 10]
+                  iconAnchor: [70, 10]
                 })}
               >
                 <Popup>
-                  <div className="p-1 space-y-1 text-xs">
-                    <span className="font-extrabold text-red-600 block">{cz.name}</span>
-                    <span className="text-slate-600">{cz.address}</span>
-                    <div className="text-[10px] font-bold text-red-700 bg-red-50 p-1.5 rounded-lg">
-                      {cz.statusText}
+                  <div className="p-1.5 space-y-1.5 text-xs text-slate-900 min-w-[210px]">
+                    <div className="flex items-center justify-between border-b border-red-100 pb-1">
+                      <span className="font-black text-red-700 uppercase tracking-wider text-[10px]">
+                        Severe Containment Zone
+                      </span>
+                      <span className="font-mono text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
+                        {rz.activeCases} Active Cases
+                      </span>
                     </div>
+                    <h4 className="font-extrabold text-slate-900 leading-tight">
+                      {rz.name}
+                    </h4>
+                    <div className="p-1.5 rounded-lg bg-red-50 text-[11px] font-semibold text-red-900">
+                      {rz.statusText}
+                    </div>
+                    <p className="text-[10px] text-slate-600 leading-relaxed font-medium">
+                      {rz.restrictionsDescription}
+                    </p>
                   </div>
                 </Popup>
               </Marker>
             </React.Fragment>
           ))}
 
-          {/* Facility Markers */}
+          {/* 🟡 2. YELLOW / AMBER SURVEILLANCE BUFFER CIRCLES */}
+          {amberZones.map(az => (
+            <React.Fragment key={az.id}>
+              <Circle
+                center={az.coordinates}
+                radius={az.radiusMeters}
+                pathOptions={{
+                  color: '#d97706',
+                  fillColor: '#f59e0b',
+                  fillOpacity: 0.25,
+                  weight: 2,
+                  dashArray: '4, 4'
+                }}
+              />
+              <Marker
+                position={az.coordinates}
+                icon={L.divIcon({
+                  html: `
+                    <div class="px-2 py-0.5 rounded-lg bg-amber-500 text-slate-950 font-extrabold text-[9px] shadow-lg border border-white whitespace-nowrap flex items-center gap-1">
+                      <span>🟡 Yellow Buffer: ${az.positivityRatePct}% Positivity</span>
+                    </div>
+                  `,
+                  className: '',
+                  iconAnchor: [70, 10]
+                })}
+              >
+                <Popup>
+                  <div className="p-1.5 space-y-1.5 text-xs text-slate-900 min-w-[210px]">
+                    <div className="flex items-center justify-between border-b border-amber-100 pb-1">
+                      <span className="font-black text-amber-800 uppercase tracking-wider text-[10px]">
+                        Active Surveillance Buffer
+                      </span>
+                      <span className="font-mono text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
+                        {az.activeCases} Cases
+                      </span>
+                    </div>
+                    <h4 className="font-extrabold text-slate-900 leading-tight">
+                      {az.name}
+                    </h4>
+                    <div className="p-1.5 rounded-lg bg-amber-50 text-[11px] font-semibold text-amber-900">
+                      {az.statusText}
+                    </div>
+                    <p className="text-[10px] text-slate-600 leading-relaxed font-medium">
+                      {az.restrictionsDescription}
+                    </p>
+                  </div>
+                </Popup>
+              </Marker>
+            </React.Fragment>
+          ))}
+
+          {/* ⛔ 3. RESTRICTED ROADS & CHECKPOINTS */}
+          {showRoadRestrictions && roadRestrictions.map(rr => (
+            <React.Fragment key={rr.id}>
+              <Polyline
+                positions={rr.coordinates}
+                pathOptions={{
+                  color: rr.severity === 'closed' ? '#b91c1c' : '#d97706',
+                  weight: 5,
+                  dashArray: '8, 8',
+                  opacity: 0.9
+                }}
+              />
+              {/* Mid-point Roadblock Icon Marker */}
+              <Marker
+                position={rr.coordinates[Math.floor(rr.coordinates.length / 2)]}
+                icon={createRoadblockIcon(rr.severity)}
+              >
+                <Popup>
+                  <div className="p-1.5 space-y-1 text-xs text-slate-900 min-w-[200px]">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-rose-700 block">
+                      {rr.severity === 'closed' ? 'Barricaded Road Closure' : 'Health Screening Checkpoint'}
+                    </span>
+                    <h4 className="font-extrabold text-slate-900">{rr.name}</h4>
+                    <div className="text-[11px] font-bold text-rose-800 bg-rose-50 p-1.5 rounded-lg">
+                      {rr.statusText}
+                    </div>
+                    <p className="text-[10px] text-slate-600">{rr.reason}</p>
+                  </div>
+                </Popup>
+              </Marker>
+            </React.Fragment>
+          ))}
+
+          {/* 4. FACILITY MARKERS (HOSPITALS, DISPENSARIES, TESTING BOOTHS) */}
           {filteredFacilities.map(f => (
             <Marker
               key={f.id}
               position={f.coordinates}
               icon={createFacilityIcon(f.type, f.isOpen)}
-              eventHandlers={{
-                click: () => setSelectedFacility(f)
-              }}
             >
               <Popup>
                 <div className="p-1.5 space-y-2 min-w-[220px] text-slate-900">
@@ -302,13 +451,6 @@ export const PandemicMap: React.FC = () => {
                     <div className="bg-purple-50 p-1.5 rounded-lg text-[10px] text-purple-800">
                       <span className="block font-bold">RT-PCR Capacity: {f.dailyTestingCapacity}/day</span>
                       <span>Wait Time: ~{f.currentWaitTimeMin} mins</span>
-                    </div>
-                  )}
-
-                  {f.type === 'oxygen_depot' && (
-                    <div className="bg-blue-50 p-1.5 rounded-lg text-[10px] text-blue-800">
-                      <span className="block font-bold">Reserve Cylinders: {f.oxygenStockCylinders}</span>
-                      <span>Cryogenic Buffer Active</span>
                     </div>
                   )}
 
