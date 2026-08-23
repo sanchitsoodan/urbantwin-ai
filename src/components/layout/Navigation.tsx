@@ -1,6 +1,8 @@
 import React from 'react';
 import { 
   Map as MapIcon, 
+  ShieldAlert,
+  CreditCard,
   SlidersHorizontal, 
   Ambulance, 
   Info
@@ -15,17 +17,19 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'command-center', label: 'City Map', icon: MapIcon },
+  { id: 'command-center', label: 'Dashboard', icon: MapIcon },
+  { id: 'pandemic', label: 'Pandemic', icon: ShieldAlert },
+  { id: 'pricing', label: 'Pricing', icon: CreditCard },
   { id: 'simulator', label: 'What-If Sandbox', icon: SlidersHorizontal },
   { id: 'emergency-response', label: 'Emergency Demo', icon: Ambulance },
-  { id: 'architecture', label: 'How It Works', icon: Info }
+  { id: 'architecture', label: 'System Architecture', icon: Info }
 ];
 
 export const Navigation: React.FC = () => {
   const { activeTab, setActiveTab } = useCity();
 
   return (
-    <nav className="md:hidden bg-white border-b border-slate-200 px-4 py-2 overflow-x-auto scrollbar-none">
+    <nav className="lg:hidden bg-white border-b border-slate-200 px-4 py-2 overflow-x-auto scrollbar-none">
       <div className="flex items-center gap-1.5">
         {NAV_ITEMS.map(item => {
           const Icon = item.icon;
@@ -35,7 +39,7 @@ export const Navigation: React.FC = () => {
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
                 isActive
                   ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-xs'
                   : 'text-slate-600 hover:bg-slate-100'

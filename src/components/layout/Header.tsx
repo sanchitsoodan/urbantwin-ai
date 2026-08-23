@@ -90,50 +90,62 @@ export const Header: React.FC<HeaderProps> = ({ onOpenPitchModal }) => {
 
         </div>
 
-        {/* Center: Desktop Navigation Tabs */}
+        {/* Center: Desktop Navigation Tabs: Dashboard -> Pandemic -> Pricing -> Sandbox -> Dispatch */}
         <nav className="hidden lg:flex items-center gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200">
           <button
             onClick={() => setActiveTab('command-center')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${
               activeTab === 'command-center' 
                 ? 'bg-white text-blue-700 shadow-xs border border-slate-200/60' 
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Operations Cockpit
+            Dashboard
+          </button>
+
+          <button
+            onClick={() => setActiveTab('pandemic')}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${
+              activeTab === 'pandemic' 
+                ? 'bg-rose-600 text-white shadow-xs' 
+                : 'text-slate-700 hover:text-rose-700 hover:bg-rose-50'
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${activeTab === 'pandemic' ? 'bg-white animate-ping' : 'bg-rose-500'}`} />
+            <span>PANDEMIC</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('pricing')}
+            className={`flex items-center gap-1 px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${
+              activeTab === 'pricing' 
+                ? 'bg-blue-600 text-white shadow-xs' 
+                : 'text-slate-700 hover:text-blue-700 hover:bg-blue-50'
+            }`}
+          >
+            <span>Pricing</span>
           </button>
           
           <button
             onClick={() => setActiveTab('simulator')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
               activeTab === 'simulator' 
                 ? 'bg-white text-blue-700 shadow-xs border border-slate-200/60' 
-                : 'text-slate-600 hover:text-slate-900'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            What-If Sandbox
+            Sandbox
           </button>
 
           <button
             onClick={() => setActiveTab('emergency-response')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
               activeTab === 'emergency-response' 
                 ? 'bg-white text-blue-700 shadow-xs border border-slate-200/60' 
-                : 'text-slate-600 hover:text-slate-900'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            Emergency Dispatch
-          </button>
-
-          <button
-            onClick={() => setActiveTab('architecture')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-              activeTab === 'architecture' 
-                ? 'bg-white text-blue-700 shadow-xs border border-slate-200/60' 
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            System Architecture
+            Dispatch
           </button>
         </nav>
 

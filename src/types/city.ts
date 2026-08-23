@@ -1,5 +1,7 @@
 export type ViewTab = 
   | 'command-center'
+  | 'pandemic'
+  | 'pricing'
   | 'simulator'
   | 'emergency-response'
   | 'architecture';

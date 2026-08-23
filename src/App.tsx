@@ -13,6 +13,8 @@ import { AuthModal } from './components/auth/AuthModal';
 import { LocationPickerModal } from './components/location/LocationPickerModal';
 
 import { CommandCenterView } from './components/views/CommandCenterView';
+import { PandemicView } from './components/views/PandemicView';
+import { PricingView } from './components/views/PricingView';
 import { WhatIfSimulatorView } from './components/views/WhatIfSimulatorView';
 import { EmergencySimulatorView } from './components/views/EmergencySimulatorView';
 import { ArchitectureView } from './components/views/ArchitectureView';
@@ -30,12 +32,14 @@ const MainContent: React.FC = () => {
       {/* Mobile-Only Tab Bar */}
       <Navigation />
 
-      {/* 3 Large Clean Summary Metric Cards */}
-      <MetricCardsStrip />
+      {/* 3 Large Clean Summary Metric Cards (Hidden on dedicated pandemic and pricing views to keep them clutter-free) */}
+      {activeTab !== 'pandemic' && activeTab !== 'pricing' && <MetricCardsStrip />}
 
       {/* Main View */}
-      <main className="flex-1 mt-1">
+      <main className="flex-1 mt-3">
         {activeTab === 'command-center' && <CommandCenterView />}
+        {activeTab === 'pandemic' && <PandemicView />}
+        {activeTab === 'pricing' && <PricingView />}
         {activeTab === 'simulator' && <WhatIfSimulatorView />}
         {activeTab === 'emergency-response' && <EmergencySimulatorView />}
         {activeTab === 'architecture' && <ArchitectureView />}
