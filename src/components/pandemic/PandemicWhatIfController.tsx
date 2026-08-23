@@ -8,7 +8,9 @@ import {
   ShieldCheck, 
   CheckCircle2, 
   ArrowRight,
-  HelpCircle
+  HelpCircle,
+  Lock,
+  Zap
 } from 'lucide-react';
 import { PandemicWhatIfParams, WhatIfSimulationResult } from '../../types/pandemic';
 import { DEFAULT_PANDEMIC_WHAT_IF, compareWhatIfScenarios } from '../../services/pandemicSimulationEngine';
@@ -19,6 +21,8 @@ interface PandemicWhatIfControllerProps {
   onParamsChange: (newParams: PandemicWhatIfParams) => void;
   onRunSimulation: (result: WhatIfSimulationResult) => void;
   simulationResult: WhatIfSimulationResult | null;
+  isBusinessSubscribed?: boolean;
+  onPromptUpgrade?: () => void;
 }
 
 export const PandemicWhatIfController: React.FC<PandemicWhatIfControllerProps> = ({
@@ -26,12 +30,18 @@ export const PandemicWhatIfController: React.FC<PandemicWhatIfControllerProps> =
   params,
   onParamsChange,
   onRunSimulation,
-  simulationResult
+  simulationResult,
+  isBusinessSubscribed = false,
+  onPromptUpgrade
 }) => {
   const [localParams, setLocalParams] = useState<PandemicWhatIfParams>(params);
   const [isRunning, setIsRunning] = useState(false);
 
-  const handleSliderChange = (key: keyof PandemicWhatIfParams, value: number) => {
+  const handleSliderChange = (key: keyof PandemicWhatIfParams, value: number, isPremium: boolean = false) => {
+    if (isPremium && !isBusinessSubscribed) {
+      if (onPromptUpgrade) onPromptUpgrade();
+      return;
+    }
     const updated = { ...localParams, [key]: value };
     setLocalParams(updated);
     onParamsChange(updated);
@@ -68,7 +78,7 @@ export const PandemicWhatIfController: React.FC<PandemicWhatIfControllerProps> =
                 What-If Policy & Intervention Sandbox
               </span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                Parametric Controls
+                {isBusinessSubscribed ? 'All 5 Parameters Unlocked' : 'Basic Controls (Free Tier)'}
               </span>
             </div>
             <h2 className="text-lg font-extrabold text-slate-900 mt-0.5">
@@ -94,10 +104,13 @@ export const PandemicWhatIfController: React.FC<PandemicWhatIfControllerProps> =
       {/* 5 What-If Sliders Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         
-        {/* 1. Gathering Restrictions */}
+        {/* 1. Gathering Restrictions (FREE BASIC) */}
         <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-900">Gathering Restrictions</span>
+            <div className="flex items-center gap-1">
+              <span className="text-xs font-bold text-slate-900">Gathering Restrictions</span>
+              <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">FREE</span>
+            </div>
             <span className="text-xs font-mono font-bold text-indigo-700">
               {localParams.gatheringRestrictions <= 30 ? 'Low' : localParams.gatheringRestrictions <= 70 ? 'Moderate' : 'Maximum'}
             </span>
@@ -107,7 +120,7 @@ export const PandemicWhatIfController: React.FC<PandemicWhatIfControllerProps> =
             min={0}
             max={100}
             value={localParams.gatheringRestrictions}
-            onChange={(e) => handleSliderChange('gatheringRestrictions', Number(e.target.value))}
+            onChange={(e) => handleSliderChange('gatheringRestrictions', Number(e.target.value), false)}
             className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
           />
           <div className="flex items-center justify-between text-[10px] text-slate-400 font-medium">
@@ -116,32 +129,13 @@ export const PandemicWhatIfController: React.FC<PandemicWhatIfControllerProps> =
           </div>
         </div>
 
-        {/* 2. Remote Work Adoption */}
+        {/* 2. Travel Restrictions (FREE BASIC) */}
         <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-900">Remote Work Adoption</span>
-            <span className="text-xs font-mono font-bold text-indigo-700">
-              {localParams.remoteWorkAdoptionPct}%
-            </span>
-          </div>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            value={localParams.remoteWorkAdoptionPct}
-            onChange={(e) => handleSliderChange('remoteWorkAdoptionPct', Number(e.target.value))}
-            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-          />
-          <div className="flex items-center justify-between text-[10px] text-slate-400 font-medium">
-            <span>0%</span>
-            <span>100%</span>
-          </div>
-        </div>
-
-        {/* 3. Travel Restrictions */}
-        <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-900">Travel Restrictions</span>
+            <div className="flex items-center gap-1">
+              <span className="text-xs font-bold text-slate-900">Travel Restrictions</span>
+              <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">FREE</span>
+            </div>
             <span className="text-xs font-mono font-bold text-indigo-700">
               {localParams.travelRestrictions <= 30 ? 'Low' : localParams.travelRestrictions <= 70 ? 'Moderate' : 'High'}
             </span>
@@ -151,7 +145,7 @@ export const PandemicWhatIfController: React.FC<PandemicWhatIfControllerProps> =
             min={0}
             max={100}
             value={localParams.travelRestrictions}
-            onChange={(e) => handleSliderChange('travelRestrictions', Number(e.target.value))}
+            onChange={(e) => handleSliderChange('travelRestrictions', Number(e.target.value), false)}
             className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
           />
           <div className="flex items-center justify-between text-[10px] text-slate-400 font-medium">
@@ -160,10 +154,47 @@ export const PandemicWhatIfController: React.FC<PandemicWhatIfControllerProps> =
           </div>
         </div>
 
-        {/* 4. Healthcare Capacity */}
-        <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+        {/* 3. Remote Work Adoption (🔒 PREMIUM BUSINESS) */}
+        <div className={`p-3.5 rounded-2xl border space-y-2 relative ${!isBusinessSubscribed ? 'bg-amber-50/50 border-amber-200' : 'bg-slate-50 border-slate-200'}`}>
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-900">Healthcare Capacity</span>
+            <div className="flex items-center gap-1">
+              <span className="text-xs font-bold text-slate-900">Remote Work Adoption</span>
+              {!isBusinessSubscribed && (
+                <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-amber-100 text-amber-900 flex items-center gap-0.5">
+                  <Lock className="w-2.5 h-2.5" /> Business
+                </span>
+              )}
+            </div>
+            <span className="text-xs font-mono font-bold text-indigo-700">
+              {localParams.remoteWorkAdoptionPct}%
+            </span>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            disabled={!isBusinessSubscribed}
+            value={localParams.remoteWorkAdoptionPct}
+            onChange={(e) => handleSliderChange('remoteWorkAdoptionPct', Number(e.target.value), true)}
+            className={`w-full h-2 bg-slate-200 rounded-lg appearance-none ${!isBusinessSubscribed ? 'cursor-not-allowed opacity-60' : 'cursor-pointer accent-indigo-600'}`}
+          />
+          <div className="flex items-center justify-between text-[10px] text-slate-400 font-medium">
+            <span>0%</span>
+            <span>100%</span>
+          </div>
+        </div>
+
+        {/* 4. Healthcare Capacity Buffer (🔒 PREMIUM BUSINESS) */}
+        <div className={`p-3.5 rounded-2xl border space-y-2 relative ${!isBusinessSubscribed ? 'bg-amber-50/50 border-amber-200' : 'bg-slate-50 border-slate-200'}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <span className="text-xs font-bold text-slate-900">Healthcare Surge Buffer</span>
+              {!isBusinessSubscribed && (
+                <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-amber-100 text-amber-900 flex items-center gap-0.5">
+                  <Lock className="w-2.5 h-2.5" /> Business
+                </span>
+              )}
+            </div>
             <span className="text-xs font-mono font-bold text-indigo-700">
               {localParams.healthcareCapacity <= 40 ? 'Normal' : localParams.healthcareCapacity <= 75 ? 'Expanded' : 'Surge Max'}
             </span>
@@ -172,9 +203,10 @@ export const PandemicWhatIfController: React.FC<PandemicWhatIfControllerProps> =
             type="range"
             min={0}
             max={100}
+            disabled={!isBusinessSubscribed}
             value={localParams.healthcareCapacity}
-            onChange={(e) => handleSliderChange('healthcareCapacity', Number(e.target.value))}
-            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+            onChange={(e) => handleSliderChange('healthcareCapacity', Number(e.target.value), true)}
+            className={`w-full h-2 bg-slate-200 rounded-lg appearance-none ${!isBusinessSubscribed ? 'cursor-not-allowed opacity-60' : 'cursor-pointer accent-indigo-600'}`}
           />
           <div className="flex items-center justify-between text-[10px] text-slate-400 font-medium">
             <span>Normal</span>
@@ -182,10 +214,17 @@ export const PandemicWhatIfController: React.FC<PandemicWhatIfControllerProps> =
           </div>
         </div>
 
-        {/* 5. Public Compliance */}
-        <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+        {/* 5. Public Health Compliance (🔒 PREMIUM BUSINESS) */}
+        <div className={`p-3.5 rounded-2xl border space-y-2 relative ${!isBusinessSubscribed ? 'bg-amber-50/50 border-amber-200' : 'bg-slate-50 border-slate-200'}`}>
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-900">Public Compliance</span>
+            <div className="flex items-center gap-1">
+              <span className="text-xs font-bold text-slate-900">Public Compliance Multiplier</span>
+              {!isBusinessSubscribed && (
+                <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-amber-100 text-amber-900 flex items-center gap-0.5">
+                  <Lock className="w-2.5 h-2.5" /> Business
+                </span>
+              )}
+            </div>
             <span className="text-xs font-mono font-bold text-indigo-700">
               {localParams.publicCompliance <= 35 ? 'Low' : localParams.publicCompliance <= 70 ? 'Moderate' : 'High'}
             </span>
@@ -194,9 +233,10 @@ export const PandemicWhatIfController: React.FC<PandemicWhatIfControllerProps> =
             type="range"
             min={0}
             max={100}
+            disabled={!isBusinessSubscribed}
             value={localParams.publicCompliance}
-            onChange={(e) => handleSliderChange('publicCompliance', Number(e.target.value))}
-            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+            onChange={(e) => handleSliderChange('publicCompliance', Number(e.target.value), true)}
+            className={`w-full h-2 bg-slate-200 rounded-lg appearance-none ${!isBusinessSubscribed ? 'cursor-not-allowed opacity-60' : 'cursor-pointer accent-indigo-600'}`}
           />
           <div className="flex items-center justify-between text-[10px] text-slate-400 font-medium">
             <span>Low</span>
@@ -209,82 +249,46 @@ export const PandemicWhatIfController: React.FC<PandemicWhatIfControllerProps> =
           <button
             onClick={handleRun}
             disabled={isRunning}
-            className="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-extrabold text-xs shadow-md shadow-indigo-500/20 transition transform hover:scale-[1.02] cursor-pointer flex items-center justify-center gap-2"
+            className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-extrabold text-xs shadow-md shadow-indigo-500/20 transition transform hover:scale-[1.02] cursor-pointer flex items-center justify-center gap-2"
           >
-            <Play className={`w-4 h-4 fill-white ${isRunning ? 'animate-spin' : ''}`} />
-            <span>{isRunning ? 'CALCULATING DYNAMICS...' : 'RUN SIMULATION'}</span>
+            <Play className={`w-3.5 h-3.5 fill-white ${isRunning ? 'animate-spin' : ''}`} />
+            <span>{isRunning ? 'CALCULATING EPIDEMIOLOGY...' : 'RUN SIMULATION'}</span>
           </button>
-          <span className="text-[10px] text-slate-500 font-semibold">
-            Recalculates multi-sector impact estimates
+          <span className="text-[10px] text-slate-500 font-medium">
+            Calculates 8-sector mitigations
           </span>
         </div>
 
       </div>
 
-      {/* SIMULATION RESULT COMPARISON SECTION */}
+      {/* Comparison Results Card / Table (if simulation was run) */}
       {simulationResult && (
-        <div className="mt-5 p-5 rounded-3xl bg-slate-50 border-2 border-slate-200 space-y-4 animate-in fade-in-50">
-          
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200">
-            <div>
-              <span className="text-[10px] font-extrabold text-indigo-700 uppercase tracking-wider">
-                Outcomes Analysis
+        <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3 animate-in fade-in-50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-indigo-600" />
+              <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                Simulation Outcomes Comparison
               </span>
-              <h3 className="text-base font-extrabold text-slate-900">
-                SIMULATION RESULT
-              </h3>
             </div>
 
-            {/* Average Impact Before vs After */}
-            <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-2xl border border-slate-200 shadow-xs">
-              <div className="text-center">
-                <span className="text-[10px] text-slate-400 font-bold block">BEFORE</span>
-                <span className="text-lg font-mono font-extrabold text-slate-700">{simulationResult.beforeAvg}</span>
-              </div>
-              <ArrowRight className="w-4 h-4 text-slate-400" />
-              <div className="text-center">
-                <span className="text-[10px] text-slate-400 font-bold block">AFTER</span>
-                <span className="text-lg font-mono font-extrabold text-indigo-600">{simulationResult.afterAvg}</span>
-              </div>
-              <div className="pl-3 border-l border-slate-100 text-center">
-                <span className="text-[10px] text-slate-400 font-bold block">IMPROVEMENT</span>
-                <span className={`text-sm font-mono font-extrabold ${simulationResult.delta <= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                  {simulationResult.delta <= 0 ? `${simulationResult.delta} pts` : `+${simulationResult.delta} pts`}
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-slate-500">Baseline Score: <b className="font-mono text-slate-800">{simulationResult.beforeAvg}</b></span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+              <span className="text-indigo-900 font-bold">Policy Score: <b className="font-mono text-indigo-700">{simulationResult.afterAvg}</b></span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+            {simulationResult.sectors.slice(0, 4).map((sec) => (
+              <div key={sec.sectorId} className="p-2.5 rounded-xl bg-white border border-slate-200">
+                <span className="text-[10px] text-slate-400 font-bold block">{sec.name}</span>
+                <span className={`text-sm font-mono font-black ${sec.delta <= 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                  {sec.scenario} / 100 ({sec.delta <= 0 ? '' : '+'}{sec.delta})
                 </span>
               </div>
-            </div>
+            ))}
           </div>
-
-          {/* Simple Clean Comparison Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-slate-200 text-[11px] text-slate-400 uppercase font-extrabold">
-                  <th className="pb-2">Sector</th>
-                  <th className="pb-2 text-right">Previous</th>
-                  <th className="pb-2 text-right">Scenario</th>
-                  <th className="pb-2 text-right">Net Change</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200/60 font-medium">
-                {simulationResult.sectors.map((s) => (
-                  <tr key={s.sectorId} className="hover:bg-white/80 transition">
-                    <td className="py-2.5 font-bold text-slate-900">{s.name}</td>
-                    <td className="py-2.5 text-right font-mono text-slate-600">{s.previous}</td>
-                    <td className="py-2.5 text-right font-mono font-bold text-indigo-700">{s.scenario}</td>
-                    <td className="py-2.5 text-right font-mono font-extrabold">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] ${
-                        s.delta < 0 ? 'bg-emerald-100 text-emerald-800' : s.delta === 0 ? 'bg-slate-200 text-slate-700' : 'bg-rose-100 text-rose-800'
-                      }`}>
-                        {s.delta <= 0 ? `${s.delta}` : `+${s.delta}`}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
         </div>
       )}
 

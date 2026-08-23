@@ -324,6 +324,8 @@ export const PandemicView: React.FC = () => {
         onParamsChange={(p) => setWhatIfParams(p)}
         onRunSimulation={(res) => setSimulationResult(res)}
         simulationResult={simulationResult}
+        isBusinessSubscribed={isBusinessSubscribed}
+        onPromptUpgrade={openPaymentModal}
       />
 
       {/* 9. RECOVERY MODE & IMPACT OVER TIME CHART */}
